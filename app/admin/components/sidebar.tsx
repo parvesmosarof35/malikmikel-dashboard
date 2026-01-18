@@ -6,17 +6,23 @@ import { useAuth } from "@/contexts/auth-context";
 import { 
     LayoutDashboard, 
     Users, 
-    Package, 
-    ClipboardList, 
-    Building2, 
-    FlaskConical, 
     ShieldCheck, 
-    FileText, 
     Settings, 
     LogOut, 
     X 
 } from "lucide-react";
 import Image from "next/image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -30,22 +36,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   
   const isActive = (path: string) => pathname === path;
 
-  const handleLogout = () => {
-    if (window.confirm("Are you sure? \nYou will be logged out of your account.")) {
-      logout();
-      router.push("/auth");
-    }
-  };
-
   const navItems = [
     { name: "Dashboard",       path: "/admin/dashboard",       icon: LayoutDashboard },
     { name: "User Management", path: "/admin/users",           icon: Users },
-    { name: "Matches",         path: "/admin/matches",         icon: ClipboardList },
-    { name: "Teams",           path: "/admin/teams",           icon: Package },
-    { name: "Stadiums",        path: "/admin/stadiums",        icon: Building2 },
-    { name: "Orders",          path: "/admin/orders",          icon: FileText },
     { name: "Create Admin",    path: "/admin/create-admin",    icon: ShieldCheck },
-    { name: "Reports",         path: "/admin/reports",         icon: FileText },
     { name: "Settings",        path: "/admin/settings",        icon: Settings },
   ];
 
@@ -82,7 +76,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             <li
                 className={`flex items-center gap-2 mt-5 cursor-pointer transition-all duration-300 ease-in-out ${
                 isActive(item.path)
-                    ? "bg-blue-600 text-white px-3 py-3 rounded-lg" // User used #74AA2E (green), changing to blue to match "light blue" request
+                    ? "bg-blue-600 text-white px-3 py-3 rounded-lg"
                     : ""
                 }`}
             >
@@ -93,15 +87,35 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         ))}
       </ul>
 
-      {/* Logout Button */}
+      {/* Logout Button with Shadcn AlertDialog */}
       <div className="absolute mt-8 md:mt-20 mmd:mt-20 w-full px-5">
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-4 w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 duration-200 text-white justify-center" // Adapted color
-        >
-          <LogOut className="w-5 h-5 font-bold" />
-          <span>Logout</span>
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button 
+              className="flex items-center gap-4 w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 duration-200 text-white justify-center"
+            >
+              <LogOut className="w-5 h-5 font-bold" />
+              <span>Logout</span>
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will be logged out of your account and redirected to the login page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => { logout(); router.push("/auth"); }} 
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

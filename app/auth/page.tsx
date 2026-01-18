@@ -31,9 +31,7 @@ function SignInPage() {
             <h2 className="text-[#0D0D0D] text-2xl  font-bold text-center mb-5">
               Log in to your account
             </h2>
-            <p className="text-[#6A6D76] text-center mb-10">
-              Please enter your email and password to continue.
-            </p>
+          
             <form className="space-y-5">
               <div className="w-full">
                 <label className="text-xl text-[#0D0D0D] mb-2 font-bold">

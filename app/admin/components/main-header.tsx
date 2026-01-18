@@ -31,7 +31,7 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
             <button
               type="button"
               aria-label="Notifications"
-              onClick={() => router.push('/notifications')}
+              onClick={() => router.push('/admin/notifications')}
               className="relative p-2 rounded-full border border-blue-600 hover:bg-white/60 transition"
             >
               <Bell className="w-6 h-6 text-[#0D0D0D]" />
@@ -41,7 +41,7 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
             </button>
             
             <div
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/admin/profile")}
               className="flex items-center gap-2 cursor-default"
             >
               {/* Avatar */}

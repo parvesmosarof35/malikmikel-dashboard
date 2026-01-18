@@ -1,204 +1,259 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ChevronLeft, Save, User, Mail, Lock } from "lucide-react";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const router = useRouter();
-  
+  const [activeTab, setActiveTab] = useState("edit-profile");
+
+  return (
+    <div className="w-full flex flex-col items-center gap-6 p-4 md:p-8">
+      <div className="w-full max-w-xl">
+        <h1 className="text-2xl font-bold text-[#0D0D0D] mb-6 text-center">Profile Settings</h1>
+        
+        <Tabs defaultValue="edit-profile" className="w-full max-w-xl" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 bg-[#F3F4F6] p-1 rounded-lg">
+            <TabsTrigger 
+                value="edit-profile"
+                className="data-[state=active]:bg-[#00c0b5] data-[state=active]:text-white rounded-md transition-all"
+            >
+                Edit Profile
+            </TabsTrigger>
+            <TabsTrigger 
+                value="change-password"
+                className="data-[state=active]:bg-[#00c0b5] data-[state=active]:text-white rounded-md transition-all"
+            >
+                Change Password
+            </TabsTrigger>
+          </TabsList>
+          
+          <div className="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            <TabsContent value="edit-profile" className="mt-0">
+                <EditProfileForm user={user} />
+            </TabsContent>
+            
+            <TabsContent value="change-password" className="mt-0">
+                <ChangePasswordForm />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
+
+// --- Sub-components (Forms) ---
+
+function EditProfileForm({ user }: { user: any }) {
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
+    name: "",
+    phone: "",
+    image: null as File | null
   });
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Simulate loading user data
     if (user) {
-        setFormData(prev => ({
-            ...prev,
-            fullName: user.fullName,
-            email: user.email
-        }));
-        setIsLoading(false);
-    } else {
-        // Fallback or very quick simulated delay
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
+      setFormData(prev => ({
+        ...prev,
+        name: user.fullName || "Admin User",
+        phone: "123-456-7890", 
+      }));
     }
   }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Validate passwords if user is trying to change it
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-        toast.error("New passwords do not match");
-        setIsSubmitting(false);
-        return;
-    }
-
-    // Mock API call
-    setTimeout(() => {
-        setIsSubmitting(false);
-        toast.success("Profile updated successfully!");
-        // Clear password fields on success
-        setFormData(prev => ({
-            ...prev, 
-            currentPassword: "",
-            newPassword: "", 
-            confirmPassword: ""
-        }));
-    }, 1500);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-[50vh]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      );
-  }
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error("Invalid File", { description: "Please select an image file" });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File Too Large", { description: "Image size should be less than 5MB" });
+        return;
+      }
+      setFormData(prev => ({ ...prev, image: file }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error("Validation Error", { description: "Name is required" });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast.success("Profile Updated", { description: "Your profile has been updated successfully" });
+      setFormData(prev => ({ ...prev, image: null }));
+    } catch (error) {
+      toast.error("Update Failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="w-full mx-auto">
-      <div className="bg-blue-600 px-6 py-4 rounded-xl mb-6 flex items-center gap-3 shadow-md shadow-blue-200">
-        <button
-          onClick={() => router.back()}
-          className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-white text-xl sm:text-2xl font-bold">Edit Profile</h1>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>User Name</Label>
+        <Input 
+            name="name" 
+            value={formData.name} 
+            onChange={handleInputChange} 
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="Enter full name"
+        />
       </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Personal Info Section */}
-            <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">Personal Information</h3>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <User className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                value={formData.fullName}
-                                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                                className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                placeholder="John Doe"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="email"
-                                value={formData.email}
-                                disabled
-                                className="pl-10 w-full p-3 border border-gray-200 bg-gray-50 text-gray-500 rounded-lg cursor-not-allowed"
-                            />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Email cannot be changed.</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Password Section */}
-            <div className="pt-2">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">Change Password</h3>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="password"
-                                value={formData.currentPassword}
-                                onChange={(e) => setFormData({...formData, currentPassword: e.target.value})}
-                                className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="password"
-                                    value={formData.newPassword}
-                                    onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
-                                    className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="password"
-                                    value={formData.confirmPassword}
-                                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                                    className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="pt-6">
-                <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold w-full py-3 rounded-lg transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
-                >
-                {isSubmitting ? (
-                    <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        Updating Profile...
-                    </>
-                ) : (
-                    <>
-                        <Save className="w-4 h-4" />
-                        Save Changes
-                    </>
-                )}
-                </button>
-            </div>
-        </form>
+      <div className="space-y-2">
+        <Label>Email</Label>
+        <Input 
+            value={user?.role === 'admin' ? "admin@example.com" : "user@example.com"} 
+            disabled 
+            className="bg-gray-50"
+        />
       </div>
-    </div>
+      <div className="space-y-2">
+        <Label>Contact Number</Label>
+        <Input 
+            name="phone" 
+            value={formData.phone} 
+            onChange={handleInputChange} 
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="Enter contact number"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Profile Image</Label>
+        <Input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleImageChange}
+            className="cursor-pointer file:text-[#00c0b5]" 
+        />
+      </div>
+      <Button 
+        type="submit" 
+        disabled={isLoading} 
+        className="w-full bg-[#00c0b5] hover:bg-[#00a095] mt-4"
+      >
+        {isLoading ? "Updating..." : "Save Changes"}
+      </Button>
+    </form>
+  );
+}
+
+function ChangePasswordForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
+  const [formData, setFormData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const toggleShow = (field: keyof typeof showPass) => {
+    setShowPass(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      toast.error("All fields are required");
+      return;
+    }
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success("Password Changed Successfully");
+      setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      toast.error("Failed to change password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Current Password</Label>
+        <div className="relative">
+          <Input 
+            type={showPass.current ? "text" : "password"} 
+            name="currentPassword" 
+            value={formData.currentPassword} 
+            onChange={handleChange}
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="********"
+          />
+          <button type="button" onClick={() => toggleShow('current')} className="absolute right-3 top-2.5 text-gray-500">
+            {showPass.current ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>New Password</Label>
+        <div className="relative">
+          <Input 
+            type={showPass.new ? "text" : "password"} 
+            name="newPassword" 
+            value={formData.newPassword} 
+            onChange={handleChange}
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="********"
+          />
+          <button type="button" onClick={() => toggleShow('new')} className="absolute right-3 top-2.5 text-gray-500">
+            {showPass.new ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Confirm Password</Label>
+        <div className="relative">
+          <Input 
+            type={showPass.confirm ? "text" : "password"} 
+            name="confirmPassword" 
+            value={formData.confirmPassword} 
+            onChange={handleChange}
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="********"
+          />
+          <button type="button" onClick={() => toggleShow('confirm')} className="absolute right-3 top-2.5 text-gray-500">
+            {showPass.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+      </div>
+      <Button 
+        type="submit" 
+        disabled={isLoading} 
+        className="w-full bg-[#00c0b5] hover:bg-[#00a095] mt-4"
+      >
+        {isLoading ? "Changing..." : "Change Password"}
+      </Button>
+    </form>
   );
 }
