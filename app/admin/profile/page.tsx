@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { activeTabBG, buttonbg } from "@/contexts/theme";
+import { activeTabClass, buttonbg } from "@/contexts/theme";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -40,13 +40,13 @@ export default function ProfilePage() {
           <TabsList className="grid w-full grid-cols-2 bg-[#F3F4F6] p-1 rounded-lg cursor-pointer">
             <TabsTrigger 
                 value="edit-profile"
-                className={`data-[state=active]:${activeTabBG} data-[state=active]:text-white rounded-md transition-all cursor-pointer`}
+                className={`${activeTabClass} rounded-md transition-all cursor-pointer`}
             >
                 Edit Profile
             </TabsTrigger>
             <TabsTrigger 
                 value="change-password"
-                className={`data-[state=active]:${activeTabBG} data-[state=active]:text-white rounded-md transition-all cursor-pointer`}
+                className={`${activeTabClass} rounded-md transition-all cursor-pointer`}
             >
                 Change Password
             </TabsTrigger>

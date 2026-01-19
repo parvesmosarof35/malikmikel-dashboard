@@ -54,7 +54,7 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
                 <h3 className="hidden md:block text-[#0D0D0D] text-lg font-semibold">
                   {user?.fullName || 'User'}
                 </h3>
-                <p className="text-[#0D0D0D] text-lg font-semibold capitalize">
+                <p className="text-[#0D0D0D] text-md capitalize">
                   {user?.role || 'User'}
                 </p>
               </div>
