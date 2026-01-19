@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { buttonbg, sidebarbg } from "@/contexts/theme";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
   return (
     <div
-      className={`bg-blue-50 text-[#0D0D0D] h-screen overflow-y-auto py-5 md:py-0 z-50 transition-all duration-300 transform overflow-hidden
+      className={` ${sidebarbg} text-[#0D0D0D] h-screen overflow-y-auto py-5 md:py-0 z-50 transition-all duration-300 transform overflow-hidden
         w-[80%] sm:w-[70%] md:w-[50%] ${isOpen ? "lg:w-68 xl:w-72 md:rounded-2xl lg:mt-5 md:mt-0 rounded-l-none" : "lg:w-0"}
         ${isOpen ? "translate-x-0" : "-translate-x-full"} ${isOpen ? "lg:translate-x-0" : "lg:-translate-x-full"}
         fixed top-0 left-0 
@@ -64,7 +65,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
       <Link href="/">
       <div className="flex justify-center items-center gap-2 px-5 mt-2">
         <div className="relative w-[150px] h-[100px]">
-             <Image src="/clientLogo.png" alt="User Avatar" fill className="object-contain" />
+             <Image src="/caribee.png" alt="User Avatar" fill className="object-contain" />
         </div>
       </div>
       </Link>
@@ -76,7 +77,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             <li
                 className={`flex items-center gap-2 mt-5 cursor-pointer transition-all duration-300 ease-in-out ${
                 isActive(item.path)
-                    ? "bg-blue-600 text-white px-3 py-3 rounded-lg"
+                    ? `${buttonbg} text-white px-3 py-3 rounded-lg`
                     : ""
                 }`}
             >
@@ -92,7 +93,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button 
-              className="flex items-center gap-4 w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 duration-200 text-white justify-center"
+              className={`flex items-center gap-4 w-full py-3 rounded-lg ${buttonbg} px-3 duration-200 text-white justify-center`}
             >
               <LogOut className="w-5 h-5 font-bold" />
               <span>Logout</span>

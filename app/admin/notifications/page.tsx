@@ -16,6 +16,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
+import { buttonbg } from "@/contexts/theme";
 
 interface NotificationItem {
   _id: string;
@@ -119,7 +120,7 @@ export default function NotificationsPage() {
   return (
     <div className="p-5 min-h-screen">
       {/* Header Section */}
-      <div className="bg-[#00c0b5] px-4 md:px-5 py-3 rounded-md mb-3 flex flex-wrap md:flex-nowrap items-start md:items-center gap-2 md:gap-3">
+      <div className={`${buttonbg} px-4 md:px-5 py-3 rounded-md mb-3 flex flex-wrap md:flex-nowrap items-start md:items-center gap-2 md:gap-3`}>
         <button
           onClick={() => router.back()}
           className="text-white hover:opacity-90 transition"
@@ -133,10 +134,10 @@ export default function NotificationsPage() {
             {notifications.filter(n => !n.isRead).length} unread
           </span>
           <Button 
-            onClick={handleMarkAllRead} 
+            onClick={handleMarkAllRead}
             size="sm"
             variant="secondary"
-            className="text-[#00c0b5] bg-white hover:bg-white/90"
+            className="text-[#2E6F65] bg-white hover:bg-white/90"
             disabled={isLoading || isMarkingRead}
           >
             Mark all read
@@ -161,12 +162,12 @@ export default function NotificationsPage() {
                       }`}
                     >
                       {/* Unread Accent Bar */}
-                      <div className={`w-1 rounded-full self-stretch ${item.isRead ? "bg-transparent" : "bg-[#00c0b5]"}`} />
+                      <div className={`w-1 rounded-full self-stretch ${item.isRead ? "bg-transparent" : "bg-[#2E6F65]"}`} />
 
                       {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-base md:text-lg font-semibold text-[#0D0D0D]">{item.title}</h4>
+                          <h4 className="text-base md:text-lg font-semibold text-[#2E6F65]">{item.title}</h4>
                           <span className="text-xs md:text-sm bg-gray-100 text-gray-600 px-2 py-1 rounded-full shrink-0">
                             {formatTimeAgo(item.createdAt)}
                           </span>
@@ -175,7 +176,7 @@ export default function NotificationsPage() {
                           <p className="text-gray-600 text-sm mt-1 pr-2">{item.message}</p>
                         )}
                         {!item.isRead && (
-                          <p className="text-[12px] text-[#00c0b5] mt-1 font-bold">New</p>
+                          <p className="text-[12px] text-[#2E6F65] mt-1 font-bold">New</p>
                         )}
                       </div>
 
@@ -187,7 +188,7 @@ export default function NotificationsPage() {
                         {!item.isRead && (
                           <Button 
                             size="sm" 
-                            className="bg-[#00c0b5] hover:bg-[#00a095]"
+                            className="bg-[#2E6F65] hover:bg-[#2E6F65]/90"
                             onClick={() => handleMarkAsRead(item._id)}
                             disabled={isMarkingRead}
                           >

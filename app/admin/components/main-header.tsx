@@ -3,6 +3,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { Menu, Bell } from "lucide-react";
+import { textPrimary, borderPrimary, sidebarbg } from "@/contexts/theme";
 
 interface MainHeaderProps {
   toggleSidebar: () => void;
@@ -17,24 +18,24 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
 
   return (
     <div className="relative w-full px-5">
-      <header className="bg-blue-50 shadow-sm rounded-lg border border-[#E5E7EB] overflow-hidden">
+      <header className={`${sidebarbg} shadow-sm rounded-lg border border-[#E5E7EB] overflow-hidden`}>
         <div className="flex justify-between items-center px-5 md:px-10 h-[80px]">
           <button
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
-            className="p-2 rounded hover:opacity-80 focus:outline-none cursor-pointer text-[#0D0D0D]"
+            className={`p-2 rounded hover:opacity-80 focus:outline-none cursor-pointer ${textPrimary}`}
           >
             <Menu className="w-8 h-8" />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Notification */}
             <button
               type="button"
               aria-label="Notifications"
               onClick={() => router.push('/admin/notifications')}
-              className="relative p-2 rounded-full border border-blue-600 hover:bg-white/60 transition"
+              className={`relative p-2 rounded-full border ${borderPrimary} hover:bg-white/60 transition`}
             >
-              <Bell className="w-6 h-6 text-[#0D0D0D]" />
+              <Bell className={`w-6 h-6 ${textPrimary}`} />
               {unreadCount > 0 && (
                 <span className="absolute top-2 right-2 inline-flex h-2 w-2 rounded-full bg-[#E53E3E]"></span>
               )}
@@ -45,7 +46,7 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
               className="flex items-center gap-2 cursor-default"
             >
               {/* Avatar */}
-                <div className="w-8 md:w-12 h-8 md:h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
+                <div className={`w-8 md:w-12 h-8 md:h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg`}>
                     {user?.fullName?.charAt(0).toUpperCase() || 'U'}
                 </div>
               

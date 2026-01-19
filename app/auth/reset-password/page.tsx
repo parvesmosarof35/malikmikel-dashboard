@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 
 import { useRouter } from "next/navigation";
+import { buttonbg } from "@/contexts/theme";
 
 function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
@@ -81,7 +82,7 @@ function ResetPassword() {
                 <button
                   onClick={() => router.push("/auth")}
                   type="button"
-                  className="w-1/3 bg-[#00c0b5] text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5"
+                  className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
                 >
                   Update Password
                 </button>

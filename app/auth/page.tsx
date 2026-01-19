@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { buttonbg } from "@/contexts/theme";
 
 function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -131,7 +132,7 @@ function SignInPage() {
                     Remember Password
                   </span>
                 </label>
-                <Link href="/auth/forget-password" className="text-[#00c0b5] text-xl">
+                <Link href="/auth/forget-password" className="text-green-700 text-xl">
                   Forgot Password?
                 </Link>
               </div>
@@ -139,7 +140,7 @@ function SignInPage() {
                 <button
                   onClick={() => router.push("/")}
                   type="button"
-                  className="w-1/3 bg-[#00c0b5] text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5"
+                  className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
                 >
                   Log In
                 </button>

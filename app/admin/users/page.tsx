@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { buttonbg } from "@/contexts/theme";
 
 // Mock Data
 const initialUsers = [
@@ -35,7 +36,7 @@ export default function UsersPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-        <Button className="bg-blue-600 hover:bg-blue-700">Add New User</Button>
+        <Button className={` ${buttonbg}`}>Add New User</Button>
       </div>
 
       <div className="bg-white rounded-lg border shadow-sm">

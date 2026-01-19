@@ -23,6 +23,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { buttonbg } from "@/contexts/theme";
 
 // Mock Data for Existing Admins
 const initialAdmins = [
@@ -77,14 +78,15 @@ export default function CreateAdminPage() {
       }
   };
 
+
   return (
     <div className="w-full mx-auto p-6 space-y-8">
       
       {/* Create Admin Form Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-blue-600 px-6 py-4 flex items-center gap-3">
+          <div className={`${buttonbg} px-6 py-4 flex items-center gap-3`}>
             <ShieldCheck className="text-white w-6 h-6" />
-            <h1 className="text-white text-xl font-bold">Create New Admin</h1>
+            <h1 className="text-white text-xl font-bold ">Create New Admin</h1>
           </div>
           
           <div className="p-8">
@@ -141,7 +143,8 @@ export default function CreateAdminPage() {
 
                 <Button 
                     type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    variant="brand"
+                    className="w-full"
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? "Creating..." : "Create Admin Account"}
@@ -203,9 +206,9 @@ export default function CreateAdminPage() {
           </div>
 
           {/* Pagination */}
-          <Pagination>
+          <Pagination >
             <PaginationContent>
-                <PaginationItem>
+                <PaginationItem className={` px-2 rounded-full py-2 flex items-center gap-3`}>
                 <PaginationPrevious href="#" onClick={(e) => e.preventDefault()} />
                 </PaginationItem>
                 <PaginationItem>
@@ -217,7 +220,7 @@ export default function CreateAdminPage() {
                 <PaginationItem>
                 <PaginationLink href="#" onClick={(e) => e.preventDefault()}>3</PaginationLink>
                 </PaginationItem>
-                <PaginationItem>
+                <PaginationItem className={` px-2 rounded-full py-2 flex items-center gap-3`}>
                 <PaginationNext href="#" onClick={(e) => e.preventDefault()} />
                 </PaginationItem>
             </PaginationContent>

@@ -5,12 +5,14 @@ import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { activeTabBG, buttonbg } from "@/contexts/theme";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -19,19 +21,32 @@ export default function ProfilePage() {
   return (
     <div className="w-full flex flex-col items-center gap-6 p-4 md:p-8">
       <div className="w-full max-w-xl">
+        <div className="flex flex-col items-center mb-8">
+            <div className="relative w-24 h-24 mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
+                <Image 
+                    src="/caribee.png" 
+                    alt="User Avatar" 
+                    fill 
+                    className="object-contain p-2" 
+                />
+            </div>
+            <h2 className="text-xl font-semibold text-[#0D0D0D]">{user?.fullName || "Admin User"}</h2>
+            {/* <p className="text-gray-500 capitalize">{user?.role || "Admin"}</p> */}
+        </div>
+
         <h1 className="text-2xl font-bold text-[#0D0D0D] mb-6 text-center">Profile Settings</h1>
         
         <Tabs defaultValue="edit-profile" className="w-full max-w-xl" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 bg-[#F3F4F6] p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 bg-[#F3F4F6] p-1 rounded-lg cursor-pointer">
             <TabsTrigger 
                 value="edit-profile"
-                className="data-[state=active]:bg-[#00c0b5] data-[state=active]:text-white rounded-md transition-all"
+                className={`data-[state=active]:${activeTabBG} data-[state=active]:text-white rounded-md transition-all cursor-pointer`}
             >
                 Edit Profile
             </TabsTrigger>
             <TabsTrigger 
                 value="change-password"
-                className="data-[state=active]:bg-[#00c0b5] data-[state=active]:text-white rounded-md transition-all"
+                className={`data-[state=active]:${activeTabBG} data-[state=active]:text-white rounded-md transition-all cursor-pointer`}
             >
                 Change Password
             </TabsTrigger>
@@ -147,13 +162,13 @@ function EditProfileForm({ user }: { user: any }) {
             type="file" 
             accept="image/*" 
             onChange={handleImageChange}
-            className="cursor-pointer file:text-[#00c0b5]" 
+            className="cursor-pointer file:text-blue-500" 
         />
       </div>
       <Button 
         type="submit" 
         disabled={isLoading} 
-        className="w-full bg-[#00c0b5] hover:bg-[#00a095] mt-4"
+        className={`w-full ${buttonbg} cursor-pointer mt-4`}
       >
         {isLoading ? "Updating..." : "Save Changes"}
       </Button>
@@ -250,7 +265,7 @@ function ChangePasswordForm() {
       <Button 
         type="submit" 
         disabled={isLoading} 
-        className="w-full bg-[#00c0b5] hover:bg-[#00a095] mt-4"
+        className={`w-full ${buttonbg} cursor-pointer mt-4`}
       >
         {isLoading ? "Changing..." : "Change Password"}
       </Button>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { buttonbg } from "@/contexts/theme";
 
 export default function SettingsPage() {
   return (
@@ -9,7 +10,7 @@ export default function SettingsPage() {
       {/* Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Header */}
-        <div className="bg-blue-600 px-6 py-4">
+        <div className={`${buttonbg} px-6 py-4`}>
           <h1 className="text-white text-xl sm:text-2xl font-bold">
             Settings
           </h1>

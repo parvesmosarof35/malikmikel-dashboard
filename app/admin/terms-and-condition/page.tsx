@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Save } from "lucide-react";
 import { toast } from "sonner";
+import { buttonbg } from "@/contexts/theme";
 
 export default function TermsAndConditionsPage() {
   const [content, setContent] = useState("");
@@ -39,7 +40,7 @@ export default function TermsAndConditionsPage() {
 
   return (
     <div className="w-full mx-auto">
-      <div className="bg-blue-600 px-6 py-4 rounded-xl mb-6 flex items-center gap-3 shadow-md shadow-blue-200">
+      <div className={`${buttonbg} px-6 py-4 rounded-xl mb-6 flex items-center gap-3 shadow-md shadow-blue-200`}>
         <button
           onClick={() => router.back()}
           className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
@@ -64,7 +65,7 @@ export default function TermsAndConditionsPage() {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold w-full md:w-auto md:px-12 py-3 rounded-lg transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto shadow-lg shadow-blue-600/20"
+          className={`${buttonbg} hover:bg-blue-700 text-white font-semibold w-full md:w-auto md:px-12 py-3 rounded-lg transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto shadow-lg shadow-blue-600/20`}
         >
           {isSubmitting ? (
              <>

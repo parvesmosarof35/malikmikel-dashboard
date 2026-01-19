@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { buttonbg } from "@/contexts/theme";
 
 function VerificationCode() {
   const [code, setCode] = useState(new Array(5).fill(""));
@@ -62,7 +63,7 @@ function VerificationCode() {
               <button
                 onClick={handleVerifyCode}
                 type="button"
-                className="w-1/3 bg-[#00c0b5] text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5"
+                className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
               >
                 Verify Code
               </button>
