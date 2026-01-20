@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ShieldCheck, Trash2 } from "lucide-react";
+import { ShieldCheck, Trash2, Camera, Upload } from "lucide-react";
+import Image from "next/image";
+import { useRef } from "react";
 import {
   Table,
   TableBody,
@@ -39,10 +41,23 @@ export default function CreateAdminPage() {
     fullName: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    image: null as string | null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [admins, setAdmins] = useState(initialAdmins);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +82,8 @@ export default function CreateAdminPage() {
             status: "Active"
         };
         setAdmins([...admins, newAdmin]);
-        setFormData({ fullName: "", email: "", password: "", confirmPassword: "" });
+        setAdmins([...admins, newAdmin]);
+        setFormData({ fullName: "", email: "", password: "", confirmPassword: "", image: null });
     }, 1500);
   };
 
@@ -91,6 +107,30 @@ export default function CreateAdminPage() {
           
           <div className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
+                
+                {/* Image Upload */}
+                <div className="flex justify-center mb-6">
+                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden hover:border-[#2E6F65] transition-colors">
+                            {formData.image ? (
+                                <Image src={formData.image} alt="Preview" fill className="object-cover" />
+                            ) : (
+                                <Camera className="w-8 h-8 text-gray-400" />
+                            )}
+                        </div>
+                        <div className="absolute bottom-0 right-0 bg-[#2E6F65] p-1.5 rounded-full text-white shadow-sm border border-white">
+                            <Upload className="w-3 h-3" />
+                        </div>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                        />
+                    </div>
+                </div>
+
                 <div className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="fullName">Full Name</Label>
