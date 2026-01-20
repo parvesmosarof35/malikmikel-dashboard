@@ -33,9 +33,9 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
               type="button"
               aria-label="Notifications"
               onClick={() => router.push('/admin/notifications')}
-              className={`relative p-2 rounded-full border ${borderPrimary} hover:bg-white/60 transition`}
+              className={`relative p-2 rounded-full border ${borderPrimary} hover:bg-white/60 transition cursor-pointer`}
             >
-              <Bell className={`w-6 h-6 ${textPrimary}`} />
+              <Bell className={`w-6 h-6  ${textPrimary}`} />
               {unreadCount > 0 && (
                 <span className="absolute top-2 right-2 inline-flex h-2 w-2 rounded-full bg-[#E53E3E]"></span>
               )}

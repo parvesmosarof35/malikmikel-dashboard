@@ -16,7 +16,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
-import { buttonbg } from "@/contexts/theme";
+import { buttonbg, textPrimary } from "@/contexts/theme";
 
 interface NotificationItem {
   _id: string;
@@ -137,7 +137,7 @@ export default function NotificationsPage() {
             onClick={handleMarkAllRead}
             size="sm"
             variant="secondary"
-            className="text-[#2E6F65] bg-white hover:bg-white/90"
+            className="text-[#2E6F65] bg-white hover:bg-white/90 cursor-pointer"
             disabled={isLoading || isMarkingRead}
           >
             Mark all read
@@ -148,7 +148,7 @@ export default function NotificationsPage() {
       {/* Page Loading */}
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
-          <Loader2 className="w-10 h-10 animate-spin text-[#00c0b5]" />
+          <Loader2 className={`w-10 h-10 animate-spin ${textPrimary}`} />
         </div>
       ) : (
         <>
