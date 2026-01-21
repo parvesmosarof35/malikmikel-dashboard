@@ -28,6 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { buttonbg, sidebarbg } from "@/contexts/theme";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -81,33 +82,45 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
       </Link>
 
       {/* Sidebar Menu */}
-      <ul className="mt-10 px-5 text-[10px]">
-        {navItems.map((item) => (
-          <Link key={item.path} href={item.path}>
-            <li
-                className={`flex items-center gap-2 mt-5 cursor-pointer transition-all duration-300 ease-in-out ${
-                isActive(item.path)
-                    ? `${buttonbg} text-white px-3 py-3 rounded-lg`
-                    : ""
-                }`}
-            >
-                <item.icon className="w-5 h-5" />
-                <p className="text-lg font-semibold">{item.name}</p>
-            </li>
-          </Link>
-        ))}
-      </ul>
+      <div className="mt-10 px-5 text-[10px] relative">
+          <div className="relative flex flex-col gap-2">
+            
+            {/* The Glider (Sliding Background) */}
+            <div
+                className={`absolute left-0 w-full h-12 rounded-lg transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1.0)] z-0 ${buttonbg}`}
+                style={{
+                    transform: `translateY(${navItems.findIndex(i => isActive(i.path)) * (48 + 8)}px)`, // 48px height + 8px gap
+                    opacity: navItems.some(i => isActive(i.path)) ? 1 : 0
+                }}
+            />
+
+            {navItems.map((item) => (
+            <Link key={item.path} href={item.path} className="block relative z-10">
+                <div
+                    className={`flex items-center gap-2 px-3 h-12 rounded-lg cursor-pointer transition-colors duration-500 ${
+                    isActive(item.path)
+                        ? "text-white"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                    }`}
+                >
+                    <item.icon className="w-5 h-5" />
+                    <p className={`text-lg font-semibold`}>{item.name}</p>
+                </div>
+            </Link>
+            ))}
+          </div>
+      </div>
 
       {/* Logout Button with Shadcn AlertDialog */}
       <div className="absolute mt-8 md:mt-20 mmd:mt-20 w-full px-5">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <button 
-              className={`flex items-center gap-4 w-full py-3 rounded-lg ${buttonbg} px-3 duration-200 text-white justify-center`}
-            >
-              <LogOut className="w-5 h-5 font-bold" />
-              <span>Logout</span>
-            </button>
+            <AnimatedButton
+              text="Logout"
+              onClick={() => { logout(); router.push("/auth"); }}
+              type="button"
+              className="w-full"
+            />
           </AlertDialogTrigger>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>

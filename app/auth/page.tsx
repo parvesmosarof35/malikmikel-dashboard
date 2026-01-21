@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { buttonbg } from "@/contexts/theme";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 
 function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -137,13 +138,14 @@ function SignInPage() {
                 </Link>
               </div>
               <div className="flex justify-center items-center">
-                <button
-                  onClick={() => router.push("/")}
-                  type="button"
-                  className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
-                >
-                  Log In
-                </button>
+                <div className="w-1/3 mt-5">
+                  <AnimatedButton 
+                    text="Log In" 
+                    onClick={() => router.push("/")}
+                    type="button" // Change to submit if this is a form
+                    className="w-full"
+                  />
+                </div>
               </div>
             </form>
           </div>

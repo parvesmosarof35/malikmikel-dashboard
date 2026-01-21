@@ -7,6 +7,7 @@ import Image from "next/image";
 
 import { useRouter } from "next/navigation";
 import { buttonbg } from "@/contexts/theme";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 
 function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
@@ -79,13 +80,14 @@ function ResetPassword() {
                 </div>
               </div>
               <div className="flex justify-center items-center">
-                <button
-                  onClick={() => router.push("/auth")}
-                  type="button"
-                  className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
-                >
-                  Update Password
-                </button>
+                <div className="w-1/3 mt-5">
+                  <AnimatedButton
+                    text="Update Password"
+                    onClick={() => router.push("/auth")}
+                    type="button"
+                    className="w-full"
+                  />
+                </div>
               </div>
             </form>
           </div>

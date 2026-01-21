@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { buttonbg } from "@/contexts/theme";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 
 function VerificationCode() {
   const [code, setCode] = useState(new Array(5).fill(""));
@@ -60,13 +61,14 @@ function VerificationCode() {
               </div>
             </form>
             <div className="flex justify-center items-center my-5">
-              <button
-                onClick={handleVerifyCode}
-                type="button"
-                className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
-              >
-                Verify Code
-              </button>
+              <div className="w-1/3 mt-5">
+                <AnimatedButton
+                  text="Verify Code"
+                  onClick={handleVerifyCode}
+                  type="button"
+                  className="w-full"
+                />
+              </div>
             </div>
             <p className="text-[#6A6D76] text-center mb-10">
               You have not received the email?{" "}

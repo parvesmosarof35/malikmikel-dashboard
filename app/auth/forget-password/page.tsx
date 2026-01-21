@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { buttonbg } from "@/contexts/theme";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 
 function ForgetPassword() {
   const router = useRouter();
@@ -33,13 +34,15 @@ function ForgetPassword() {
               </div>
 
               <div className="flex justify-center items-center">
-                <button
-                  onClick={() => router.push("/auth/verification-code")}
-                  type="button"
-                  className={`w-1/3 ${buttonbg} text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5`}
-                >
-                  Send Code
-                </button>
+                <div className="w-1/3 mt-5">
+                  <AnimatedButton
+                    text="Send Code"
+                    onClick={() => router.push("/auth/verification-code")}
+                    type="button"
+                    className="w-full"
+                  />
+                </div>
+            
               </div>
             </form>
           </div>

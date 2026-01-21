@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Eye, Ban, X } from "lucide-react";
+import { buttonbg } from "@/contexts/theme";
 
 // Mock Data for Chart
 const chartData = [
@@ -111,7 +112,7 @@ export default function AdminDashboard() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 space-y-8">
+    <div className="min-h-screen bg-gray-50/50 space-y-8">
       
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -180,20 +181,20 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Users Table */}
-      <div className="bg-white rounded-t-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 pb-4">
-             <h2 className="text-xl font-bold text-gray-900">Recent Users</h2>
+      <div className="bg-white rounded-t-xl shadow-sm border border-gray-100 overflow-hidden" >
+        <div className={` p-6 pb-4  ${buttonbg} text-white hover:bg-[#58976B]/90`}>
+             <h2 className="text-xl font-bold">Recent Users</h2>
         </div>
         <div className="overflow-x-auto">
             <Table>
-                <TableHeader className="bg-[#58976B] text-white hover:bg-[#58976B]/90">
+                <TableHeader className={` text-black bg-white hover:bg-`}>
                     <TableRow className="border-none hover:bg-transparent">
-                        <TableHead className="text-white font-semibold">S.ID</TableHead>
-                        <TableHead className="text-white font-semibold">Full Name</TableHead>
-                        <TableHead className="text-white font-semibold">Email</TableHead>
-                        <TableHead className="text-white font-semibold">Phone No</TableHead>
-                        <TableHead className="text-white font-semibold">Joined Date</TableHead>
-                        <TableHead className="text-white font-semibold text-center">Action</TableHead>
+                        <TableHead className="text-black font-semibold">S.ID</TableHead>
+                        <TableHead className="text-black font-semibold">Full Name</TableHead>
+                        <TableHead className="text-black font-semibold">Email</TableHead>
+                        <TableHead className="text-black font-semibold">Phone No</TableHead>
+                        <TableHead className="text-black font-semibold">Joined Date</TableHead>
+                        <TableHead className="text-black font-semibold text-center">Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
