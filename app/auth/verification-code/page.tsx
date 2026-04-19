@@ -33,6 +33,35 @@ function VerificationCode() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace") {
+      if (code[index] === "" && index > 0) {
+        const newCode = [...code];
+        newCode[index - 1] = "";
+        setCode(newCode);
+        document.getElementById(`code-${index - 1}`)?.focus();
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text/plain").trim().slice(0, 4);
+    if (/^\d+$/.test(pastedData)) {
+      const newCode = [...code];
+      for (let i = 0; i < pastedData.length; i++) {
+        newCode[i] = pastedData[i];
+      }
+      setCode(newCode);
+      const nextIndex = Math.min(pastedData.length, 3);
+      if (pastedData.length === 4) {
+        document.getElementById(`code-3`)?.focus();
+      } else {
+        document.getElementById(`code-${nextIndex}`)?.focus();
+      }
+    }
+  };
+
   const handleVerifyCode = async () => {
     const otp = code.join("");
     if (otp.length < 4) {
@@ -41,7 +70,7 @@ function VerificationCode() {
     }
     
     try {
-      const res = await verifyOtp({ otp }).unwrap();
+      const res = await verifyOtp({ otp, email }).unwrap();
       if (res.success) {
         toast.success(res.message || "OTP verified successfully");
         sessionStorage.setItem("verifiedEmail", res.email || email);
@@ -82,6 +111,8 @@ function VerificationCode() {
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleChange(e.target.value, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+                    onPaste={handlePaste}
                     className="shadow-xs w-12 h-12 text-2xl text-center border border-[#6A6D76] text-[#0d0d0d] rounded-lg focus:outline-none"
                   />
                 ))}
