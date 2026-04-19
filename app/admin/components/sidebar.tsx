@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { useAppDispatch } from "@/store/hooks";
+import { logout as logoutAction } from "@/store/authSlice";
 import { 
     LayoutDashboard, 
     Users, 
@@ -38,9 +40,20 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout: mockLogout } = useAuth(); // Keeping for context compatibility if needed
+  const dispatch = useAppDispatch();
   
   const isActive = (path: string) => pathname === path;
+
+  const handleLogout = () => {
+    dispatch(logoutAction());
+    mockLogout();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("resetToken");
+    sessionStorage.removeItem("resetEmail");
+    sessionStorage.removeItem("verifiedEmail");
+    router.push("/auth");
+  };
 
   const navItems = [
     { name: "Dashboard",       path: "/admin/dashboard",       icon: LayoutDashboard },
@@ -117,7 +130,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           <AlertDialogTrigger asChild>
             <AnimatedButton
               text="Logout"
-              onClick={() => { logout(); router.push("/auth"); }}
               type="button"
               className="w-full"
             />
@@ -132,7 +144,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
-                onClick={() => { logout(); router.push("/auth"); }} 
+                onClick={handleLogout} 
                 className="bg-red-500 hover:bg-red-600 text-white"
               >
                 Log out
