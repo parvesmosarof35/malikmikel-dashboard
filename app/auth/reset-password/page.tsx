@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import Image from "next/image";
@@ -8,10 +8,49 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { buttonbg } from "@/contexts/theme";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { useResetPasswordAdminMutation } from "@/store/api/adminApi";
+import { toast } from "sonner";
 
 function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetPassword, { isLoading }] = useResetPasswordAdminMutation();
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const verifiedEmail = sessionStorage.getItem("verifiedEmail") || sessionStorage.getItem("resetEmail");
+    if (verifiedEmail) {
+      setEmail(verifiedEmail);
+    } else {
+      toast.error("Session expired. Please try again.");
+      router.push("/auth/forget-password");
+    }
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    try {
+      const res = await resetPassword({ email, newPassword, confirmPassword }).unwrap();
+      if (res.success) {
+        toast.success(res.message || "Password changed successfully");
+        sessionStorage.removeItem("resetEmail");
+        sessionStorage.removeItem("verifiedEmail");
+        router.push("/auth");
+      } else {
+        toast.error(res.message || "Failed to reset password");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Something went wrong. Please try again.");
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen flex items-center justify-center p-5">
@@ -28,7 +67,7 @@ function ResetPassword() {
               Create a new password. Ensure it differs from previous ones for
               security
             </p>
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="w-full">
                 <label className="text-xl text-[#0D0D0D] mb-2 font-bold">
                   New Password
@@ -37,6 +76,8 @@ function ResetPassword() {
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="**********"
                     className="w-full px-5 py-3 border-2 border-[#6A6D76] rounded-md outline-none mt-5 placeholder:text-xl"
                     required
@@ -61,7 +102,9 @@ function ResetPassword() {
                 <div className="w-full relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    name="password"
+                    name="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="**********"
                     className="w-full px-5 py-3 border-2 border-[#6A6D76] rounded-md outline-none mt-5 placeholder:text-xl"
                     required
@@ -82,9 +125,8 @@ function ResetPassword() {
               <div className="flex justify-center items-center">
                 <div className="w-1/3 mt-5">
                   <AnimatedButton
-                    text="Update Password"
-                    onClick={() => router.push("/auth")}
-                    type="button"
+                    text={isLoading ? "Updating..." : "Update Password"}
+                    type="submit"
                     className="w-full"
                   />
                 </div>
