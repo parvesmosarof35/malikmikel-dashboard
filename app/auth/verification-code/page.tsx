@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { buttonbg } from "@/contexts/theme";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { useVerifyOtpAdminMutation } from "@/store/api/adminApi";
+import { toast } from "sonner";
 
 function VerificationCode() {
-  const [code, setCode] = useState(new Array(5).fill(""));
-
+  const [code, setCode] = useState(new Array(4).fill("")); // Changed to 4 based on example payload
   const router = useRouter();
+  const [verifyOtp, { isLoading }] = useVerifyOtpAdminMutation();
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const savedEmail = sessionStorage.getItem("resetEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+  }, []);
 
   const handleChange = (value: string, index: number) => {
     if (!isNaN(Number(value))) {
@@ -17,14 +27,31 @@ function VerificationCode() {
       newCode[index] = value;
       setCode(newCode);
 
-      if (value && index < 5) {
+      if (value && index < 3) {
         document.getElementById(`code-${index + 1}`)?.focus();
       }
     }
   };
 
   const handleVerifyCode = async () => {
-    router.push(`/auth/reset-password`);
+    const otp = code.join("");
+    if (otp.length < 4) {
+      toast.error("Please enter the 4 digit code");
+      return;
+    }
+    
+    try {
+      const res = await verifyOtp({ otp }).unwrap();
+      if (res.success) {
+        toast.success(res.message || "OTP verified successfully");
+        sessionStorage.setItem("verifiedEmail", res.email || email);
+        router.push(`/auth/reset-password`);
+      } else {
+        toast.error(res.message || "Invalid OTP");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Verification failed");
+    }
   };
 
   return (
@@ -40,7 +67,7 @@ function VerificationCode() {
             </h2>
             <div className="flex flex-col items-center justify-center text-center">
               <p className="text-[#6A6D76] mb-10 w-full md:w-2/3 ">
-                We sent a reset link to contact@dscode...com enter 5 digit code
+                We sent a reset code to {email || "your email"}. Enter the 4 digit code
                 that is mentioned in the email.
               </p>
             </div>
@@ -63,7 +90,7 @@ function VerificationCode() {
             <div className="flex justify-center items-center my-5">
               <div className="w-1/3 mt-5">
                 <AnimatedButton
-                  text="Verify Code"
+                  text={isLoading ? "Verifying..." : "Verify Code"}
                   onClick={handleVerifyCode}
                   type="button"
                   className="w-full"

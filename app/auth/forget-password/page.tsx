@@ -1,12 +1,34 @@
 "use client";
 
+import { useState } from "react";
+
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { buttonbg } from "@/contexts/theme";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { useForgotPasswordAdminMutation } from "@/store/api/adminApi";
+import { toast } from "sonner";
 
 function ForgetPassword() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [forgotPassword, { isLoading }] = useForgotPasswordAdminMutation();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const res = await forgotPassword({ email }).unwrap();
+      if (res.success) {
+        toast.success(res.message || "OTP sent to email");
+        sessionStorage.setItem("resetEmail", email);
+        router.push("/auth/verification-code");
+      } else {
+        toast.error(res.message || "Failed to send OTP");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Something went wrong.");
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen flex items-center justify-center p-5">
@@ -19,7 +41,7 @@ function ForgetPassword() {
             <h2 className="text-[#0D0D0D] text-2xl  font-bold text-center mb-5">
               Forgot password ?
             </h2>
-            <form className="space-y-5">
+            <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
                 <label className="text-xl text-[#0D0D0D] mb-2 font-bold">
                   Email
@@ -27,6 +49,8 @@ function ForgetPassword() {
                 <input
                   type="email"
                   name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="nahidhossain@gmail.com"
                   className="w-full px-5 py-3 border-2 border-[#6A6D76] rounded-md outline-none mt-5 placeholder:text-xl"
                   required
@@ -36,9 +60,8 @@ function ForgetPassword() {
               <div className="flex justify-center items-center">
                 <div className="w-1/3 mt-5">
                   <AnimatedButton
-                    text="Send Code"
-                    onClick={() => router.push("/auth/verification-code")}
-                    type="button"
+                    text={isLoading ? "Sending..." : "Send Code"}
+                    type="submit"
                     className="w-full"
                   />
                 </div>

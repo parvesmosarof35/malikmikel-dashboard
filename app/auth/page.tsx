@@ -1,23 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { buttonbg } from "@/contexts/theme";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { useAdminLoginMutation } from "@/store/api/adminApi";
+import { useAppDispatch } from "@/store/hooks";
+import { setUser } from "@/store/authSlice";
+import { toast } from "sonner";
 
 function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    const savedPassword = localStorage.getItem("rememberedPassword");
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setIsChecked(true);
+    }
+  }, []);
+  const dispatch = useAppDispatch();
+  const [adminLogin, { isLoading }] = useAdminLoginMutation();
 
   const handleCheckboxChange = (event : React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       setIsChecked(true);
     } else {
       setIsChecked(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (isChecked) {
+      localStorage.setItem("rememberedEmail", email);
+      localStorage.setItem("rememberedPassword", password);
+    } else {
+      localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberedPassword");
+    }
+
+    try {
+      const res = await adminLogin({ email, password }).unwrap();
+      if (res.success) {
+        toast.success(res.message || "Login successful!");
+        dispatch(setUser({ user: res.data.admin, token: res.data.token }));
+        router.push("/");
+      } else {
+        toast.error(res.message || "Login failed");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Something went wrong. Please try again.");
     }
   };
 
@@ -34,7 +77,7 @@ function SignInPage() {
               Log in to your account
             </h2>
           
-            <form className="space-y-5">
+            <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="w-full">
                 <label className="text-xl text-[#0D0D0D] mb-2 font-bold">
                   Email
@@ -42,6 +85,8 @@ function SignInPage() {
                 <input
                   type="email"
                   name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="enter your gmail"
                   className="w-full px-5 py-3 border-2 border-[#6A6D76] rounded-md outline-none mt-5 placeholder:text-xl"
                   required
@@ -55,6 +100,8 @@ function SignInPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="**********"
                     className="w-full border-2 border-[#6A6D76] rounded-md outline-none px-5 py-3 mt-5 placeholder:text-xl"
                     required
@@ -78,6 +125,7 @@ function SignInPage() {
                   <input
                     type="checkbox"
                     className="hidden"
+                    checked={isChecked}
                     onChange={handleCheckboxChange}
                   />
                   {isChecked ? (
@@ -140,9 +188,8 @@ function SignInPage() {
               <div className="flex justify-center items-center">
                 <div className="w-1/3 mt-5">
                   <AnimatedButton 
-                    text="Log In" 
-                    onClick={() => router.push("/")}
-                    type="button" // Change to submit if this is a form
+                    text={isLoading ? "Logging in..." : "Log In"} 
+                    type="submit"
                     className="w-full"
                   />
                 </div>
