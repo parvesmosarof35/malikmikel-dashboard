@@ -1,37 +1,48 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/auth-context";
+import { useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { activeTabClass, buttonbg } from "@/contexts/theme";
+import { useGetSingleAdminQuery, useUpdateAdminMutation, useChangePasswordAdminMutation } from "@/store/api/adminApi";
+import { imgUrl } from "@/store/config/envConfig";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const authUser = useAppSelector((state) => state.auth.user);
+  const { data: rawData, refetch } = useGetSingleAdminQuery(authUser?._id, { skip: !authUser?._id });
+  const adminData = rawData?.data || authUser;
+  
   const [activeTab, setActiveTab] = useState("edit-profile");
+
+  const profileImage = adminData?.image ? `${imgUrl}${adminData.image.replace(/^\//, "")}` : null;
+  const profileName = adminData?.name || adminData?.fullName || "Admin User";
+  const profileRole = adminData?.role || "Admin";
 
   return (
     <div className="w-full flex flex-col items-center gap-6 p-4 md:p-8">
       <div className="w-full max-w-xl">
         <div className="flex flex-col items-center mb-8">
-            <div className="relative w-24 h-24 mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
-                <Image 
-                    src="/caribee.png" 
-                    alt="User Avatar" 
-                    fill 
-                    className="object-contain p-2" 
-                />
+            <div className="relative w-24 h-24 mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center font-bold text-2xl text-gray-500">
+                {profileImage ? (
+                    <img 
+                        src={profileImage} 
+                        alt="User Avatar" 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                ) : (
+                    <span>{profileName.charAt(0).toUpperCase()}</span>
+                )}
             </div>
-            <h2 className="text-xl font-semibold text-[#0D0D0D]">{user?.fullName || "Admin User"}</h2>
-            {/* <p className="text-gray-500 capitalize">{user?.role || "Admin"}</p> */}
+            <h2 className="text-xl font-semibold text-[#0D0D0D]">{profileName}</h2>
+            <p className="text-gray-500 capitalize">{profileRole}</p>
         </div>
 
         <h1 className="text-2xl font-bold text-[#0D0D0D] mb-6 text-center">Profile Settings</h1>
@@ -54,11 +65,11 @@ export default function ProfilePage() {
           
           <div className="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
             <TabsContent value="edit-profile" className="mt-0">
-                <EditProfileForm user={user} />
+                <EditProfileForm adminData={adminData} refetch={refetch} />
             </TabsContent>
             
             <TabsContent value="change-password" className="mt-0">
-                <ChangePasswordForm />
+                <ChangePasswordForm adminData={adminData} />
             </TabsContent>
           </div>
         </Tabs>
@@ -69,8 +80,8 @@ export default function ProfilePage() {
 
 // --- Sub-components (Forms) ---
 
-function EditProfileForm({ user }: { user: any }) {
-  const [isLoading, setIsLoading] = useState(false);
+function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () => void }) {
+  const [updateAdmin, { isLoading }] = useUpdateAdminMutation();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -78,14 +89,14 @@ function EditProfileForm({ user }: { user: any }) {
   });
 
   useEffect(() => {
-    if (user) {
+    if (adminData) {
       setFormData(prev => ({
         ...prev,
-        name: user.fullName || "Admin User",
-        phone: "123-456-7890", 
+        name: adminData.name || adminData.fullName || "",
+        phone: adminData.phone || "", 
       }));
     }
-  }, [user]);
+  }, [adminData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -114,15 +125,24 @@ function EditProfileForm({ user }: { user: any }) {
       return;
     }
     
-    setIsLoading(true);
+    const submitData = new FormData();
+    submitData.append("name", formData.name);
+    submitData.append("phone", formData.phone);
+    if (formData.image) {
+      submitData.append("image", formData.image);
+    }
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success("Profile Updated", { description: "Your profile has been updated successfully" });
-      setFormData(prev => ({ ...prev, image: null }));
-    } catch (error) {
-      toast.error("Update Failed");
-    } finally {
-      setIsLoading(false);
+      const res = await updateAdmin(submitData).unwrap();
+      if (res.success) {
+        toast.success(res.message || "Profile updated successfully");
+        setFormData(prev => ({ ...prev, image: null }));
+        refetch(); // Refetch single admin to update live view
+      } else {
+        toast.error(res.message || "Failed to update profile");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Update Failed");
     }
   };
 
@@ -141,7 +161,7 @@ function EditProfileForm({ user }: { user: any }) {
       <div className="space-y-2">
         <Label>Email</Label>
         <Input 
-            value={user?.role === 'admin' ? "admin@example.com" : "user@example.com"} 
+            value={adminData?.email || ""} 
             disabled 
             className="bg-gray-50"
         />
@@ -176,8 +196,8 @@ function EditProfileForm({ user }: { user: any }) {
   );
 }
 
-function ChangePasswordForm() {
-  const [isLoading, setIsLoading] = useState(false);
+function ChangePasswordForm({ adminData }: { adminData: any }) {
+  const [changePassword, { isLoading }] = useChangePasswordAdminMutation();
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [formData, setFormData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
@@ -200,15 +220,21 @@ function ChangePasswordForm() {
       return;
     }
     
-    setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Password Changed Successfully");
-      setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error) {
-      toast.error("Failed to change password");
-    } finally {
-      setIsLoading(false);
+      const res = await changePassword({ 
+        currentPassword: formData.currentPassword, 
+        newPassword: formData.newPassword, 
+        confirmPassword: formData.confirmPassword 
+      }).unwrap();
+      
+      if (res.success) {
+        toast.success(res.message || "Password Changed Successfully");
+        setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        toast.error(res.message || "Failed to change password");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to change password");
     }
   };
 

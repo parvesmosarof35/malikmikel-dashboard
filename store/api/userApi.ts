@@ -4,7 +4,7 @@ export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllUser: builder.query({
       query: (params) => ({
-        url: "auth/find_by_admin_all_users",
+        url: "user/all-users",
         method: "GET",
         params: {
           ...params,

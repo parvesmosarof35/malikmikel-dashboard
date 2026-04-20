@@ -43,6 +43,28 @@ export const adminApi = baseApi.injectEndpoints({
                 body: data,
             }),
         }),
+        // Get single admin
+        getSingleAdmin: builder.query({
+            query: (id) => `admin/single-admin/${id}`,
+            providesTags: ["admin"],
+        }),
+        // Update admin
+        updateAdmin: builder.mutation({
+            query: (data) => ({
+                url: `admin/update-admin-personal-info`,
+                method: "PATCH",
+                body: data, // FormData for image upload
+            }),
+            invalidatesTags: ["admin"],
+        }),
+        // Change password admin
+        changePasswordAdmin: builder.mutation({
+            query: (data) => ({
+                url: "admin/change-password",
+                method: "PUT",
+                body: data,
+            }),
+        }),
         // Get all admins with pagination
         getAllAdmins: builder.query({
             query: ({ limit = 10, page = 1 }: any = {}) =>
@@ -83,6 +105,9 @@ export const {
     useForgotPasswordAdminMutation,
     useVerifyOtpAdminMutation,
     useResetPasswordAdminMutation,
+    useGetSingleAdminQuery,
+    useUpdateAdminMutation,
+    useChangePasswordAdminMutation,
     useGetAllAdminsQuery,
     useDeleteAdminMutation,
     useGetAllConsultantsQuery,

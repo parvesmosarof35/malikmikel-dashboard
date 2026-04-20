@@ -1,9 +1,11 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
+import { useAppSelector } from "@/store/hooks";
+import { useGetSingleAdminQuery } from "@/store/api/adminApi";
 import { useRouter } from "next/navigation";
 import { Menu, Bell } from "lucide-react";
 import { textPrimary, borderPrimary, sidebarbg } from "@/contexts/theme";
+import { imgUrl } from "@/store/config/envConfig";
 
 interface MainHeaderProps {
   toggleSidebar: () => void;
@@ -11,7 +13,19 @@ interface MainHeaderProps {
 
 export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  
+  // Grab user from redux state
+  const authUser = useAppSelector((state) => state.auth.user);
+  
+  // Fetch live admin data
+  const { data } = useGetSingleAdminQuery(authUser?._id, {
+    skip: !authUser?._id,
+  });
+
+  const adminProfile = data?.data || authUser;
+  const profileImage = adminProfile?.image ? `${imgUrl}${adminProfile.image.replace(/^\//, "")}` : null;
+  const profileName = adminProfile?.name || adminProfile?.fullName || "Admin";
+  const profileRole = adminProfile?.role || "Admin";
   
   // Dummy unread count
   const unreadCount = 3;
@@ -46,16 +60,27 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
               className="flex items-center gap-2 cursor-default"
             >
               {/* Avatar */}
-                <div className={`w-8 md:w-12 h-8 md:h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg`}>
-                    {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                <div className={`w-8 md:w-12 h-8 md:h-12 rounded-full flex items-center justify-center font-bold text-lg overflow-hidden border ${borderPrimary} bg-blue-200 text-blue-800`}>
+                    {profileImage ? (
+                      <img 
+                        src={profileImage} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span>{profileName.charAt(0).toUpperCase()}</span>
+                    )}
                 </div>
               
               <div>
                 <h3 className="hidden md:block text-[#0D0D0D] text-lg font-semibold">
-                  {user?.fullName || 'User'}
+                  {profileName}
                 </h3>
                 <p className="text-[#0D0D0D] text-md capitalize">
-                  {user?.role || 'User'}
+                  {profileRole}
                 </p>
               </div>
             </div>

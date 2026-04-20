@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Eye, Ban, X } from "lucide-react";
 import { buttonbg } from "@/contexts/theme";
+import { useGetAllUserQuery } from "@/store/api/userApi";
+import { Loader } from "@/components/ui/loader";
 
 // Mock Data for Chart
 const chartData = [
@@ -44,15 +46,8 @@ const chartData = [
 
 const maxVal = Math.max(...chartData.map((d) => d.users));
 
-// Mock Data for Users
-const recentUsers = Array(6).fill({
-  id: "01",
-  name: "Robert Fox",
-  email: "fox@email",
-  phone: "+123124",
-  date: "02-24-2024",
-  avatar: "/placeholder-avatar.png", // We'll manage with a placeholder or fallback
-});
+// Mock Data for Users - Replaced with API
+// const recentUsers = Array(6).fill({ ... });
 
 // Custom Modal for User Details
 const UserDetailModal = ({ isOpen, onClose, user }: { isOpen: boolean; onClose: () => void; user: any }) => {
@@ -67,10 +62,10 @@ const UserDetailModal = ({ isOpen, onClose, user }: { isOpen: boolean; onClose: 
             <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden relative">
                 {/* Placeholder Image */}
                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-2xl font-bold">
-                    {user?.name?.charAt(0)}
+                    {user?.userName?.charAt(0)?.toUpperCase()}
                  </div>
             </div>
-          <h3 className="text-xl font-bold text-[#2E6F65]">{user?.name}</h3>
+          <h3 className="text-xl font-bold text-[#2E6F65]">{user?.userName}</h3>
           <p className="text-sm text-gray-500 mb-6">{user?.email}</p>
           
           <div className="space-y-3 text-left">
@@ -80,7 +75,7 @@ const UserDetailModal = ({ isOpen, onClose, user }: { isOpen: boolean; onClose: 
              </div>
              <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500">Joined Date</span>
-                <span className="font-medium">{user?.date}</span>
+                <span className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : ""}</span>
              </div>
              <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500">Status</span>
@@ -100,6 +95,9 @@ export default function AdminDashboard() {
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+
+  const { data: usersData, isLoading } = useGetAllUserQuery({ page: 1, limit: 10 });
+  const recentUsers = usersData?.data || [];
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -198,23 +196,28 @@ export default function AdminDashboard() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {recentUsers.map((u, i) => (
-                        <TableRow key={i} className="hover:bg-gray-50 border-b border-gray-100">
-                             <TableCell className="font-medium text-gray-600">{u.id}</TableCell>
+                    {isLoading ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center py-12">
+                                <Loader />
+                            </TableCell>
+                        </TableRow>
+                    ) : recentUsers.map((u: any, i: number) => (
+                        <TableRow key={u._id || i} className="hover:bg-gray-50 border-b border-gray-100">
+                             <TableCell className="font-medium text-gray-600">{u._id?.slice(-6).toUpperCase()}</TableCell>
                              <TableCell>
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                                        {/* Avatar Placeholder */}
                                          <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500">
-                                            {u.name.charAt(0)}
+                                            {u.userName?.charAt(0)?.toUpperCase()}
                                          </div>
                                     </div>
-                                    <span className="font-medium text-gray-900">{u.name}</span>
+                                    <span className="font-medium text-gray-900">{u.userName}</span>
                                 </div>
                              </TableCell>
                              <TableCell className="text-gray-600">{u.email}</TableCell>
                              <TableCell className="text-gray-600">{u.phone}</TableCell>
-                             <TableCell className="text-gray-600">{u.date}</TableCell>
+                             <TableCell className="text-gray-600">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ""}</TableCell>
                              <TableCell>
                                 <div className="flex items-center justify-center gap-3">
                                     {/* Block Action Button */}
@@ -250,7 +253,7 @@ export default function AdminDashboard() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Block User?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Are you sure you want to block <span className="font-bold text-gray-900">{userToBlock?.name}</span>? They will lose access to the platform.
+                    Are you sure you want to block <span className="font-bold text-gray-900">{userToBlock?.userName}</span>? They will lose access to the platform.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -258,7 +261,7 @@ export default function AdminDashboard() {
                 <AlertDialogAction 
                     onClick={() => { 
                         // Implement block logic here
-                        console.log("Blocking user:", userToBlock?.id); 
+                        console.log("Blocking user:", userToBlock?._id); 
                         setIsBlockOpen(false); 
                     }} 
                     className="bg-red-500 hover:bg-red-600 text-white"
