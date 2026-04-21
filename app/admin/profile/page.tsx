@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { activeTabClass, buttonbg } from "@/contexts/theme";
-import { useGetSingleAdminQuery, useUpdateAdminMutation, useChangePasswordAdminMutation } from "@/store/api/adminApi";
+import { useGetSingleAdminQuery, useChangePasswordAdminMutation } from "@/store/api/adminApi";
+import { useUpdateProfileMutation } from "@/store/api/userApi";
 import { imgUrl } from "@/store/config/envConfig";
 
 export default function ProfilePage() {
@@ -22,7 +23,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("edit-profile");
 
   const profileImage = adminData?.image ? `${imgUrl}${adminData.image.replace(/^\//, "")}` : null;
-  const profileName = adminData?.name || adminData?.fullName || "Admin User";
+  const profileName = adminData?.userName || adminData?.name || adminData?.fullName || "Admin User";
   const profileRole = adminData?.role || "Admin";
 
   return (
@@ -81,10 +82,12 @@ export default function ProfilePage() {
 // --- Sub-components (Forms) ---
 
 function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () => void }) {
-  const [updateAdmin, { isLoading }] = useUpdateAdminMutation();
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [formData, setFormData] = useState({
-    name: "",
+    userName: "",
     phone: "",
+    dateOfBirth: "",
+    country: "",
     image: null as File | null
   });
 
@@ -92,8 +95,10 @@ function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () =
     if (adminData) {
       setFormData(prev => ({
         ...prev,
-        name: adminData.name || adminData.fullName || "",
+        userName: adminData.userName || adminData.name || adminData.fullName || "",
         phone: adminData.phone || "", 
+        dateOfBirth: adminData.dateOfBirth || "",
+        country: adminData.country || "",
       }));
     }
   }, [adminData]);
@@ -120,20 +125,23 @@ function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      toast.error("Validation Error", { description: "Name is required" });
+    if (!formData.userName.trim()) {
+      toast.error("Validation Error", { description: "User Name is required" });
       return;
     }
     
     const submitData = new FormData();
-    submitData.append("name", formData.name);
+    submitData.append("userName", formData.userName);
     submitData.append("phone", formData.phone);
+    submitData.append("dateOfBirth", formData.dateOfBirth);
+    submitData.append("country", formData.country);
+    
     if (formData.image) {
       submitData.append("image", formData.image);
     }
 
     try {
-      const res = await updateAdmin(submitData).unwrap();
+      const res = await updateProfile(submitData).unwrap();
       if (res.success) {
         toast.success(res.message || "Profile updated successfully");
         setFormData(prev => ({ ...prev, image: null }));
@@ -151,11 +159,11 @@ function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () =
       <div className="space-y-2">
         <Label>User Name</Label>
         <Input 
-            name="name" 
-            value={formData.name} 
+            name="userName" 
+            value={formData.userName} 
             onChange={handleInputChange} 
             className="focus-visible:ring-[#00c0b5]"
-            placeholder="Enter full name"
+            placeholder="Enter user name"
         />
       </div>
       <div className="space-y-2">
@@ -174,6 +182,26 @@ function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () =
             onChange={handleInputChange} 
             className="focus-visible:ring-[#00c0b5]"
             placeholder="Enter contact number"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Date of Birth</Label>
+        <Input 
+            name="dateOfBirth" 
+            value={formData.dateOfBirth} 
+            onChange={handleInputChange} 
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="02/02/2000"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Country</Label>
+        <Input 
+            name="country" 
+            value={formData.country} 
+            onChange={handleInputChange} 
+            className="focus-visible:ring-[#00c0b5]"
+            placeholder="Enter country"
         />
       </div>
       <div className="space-y-2">

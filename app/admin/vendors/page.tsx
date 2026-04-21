@@ -39,6 +39,9 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { buttonbg, textPrimary, borderPrimary } from "@/contexts/theme";
+import { useGetAllVendorsQuery, useDeleteVendorMutation, useCreateVendorMutation } from "@/store/api/vendorApi";
+import { Loader } from "@/components/ui/loader";
+import { toast } from "sonner";
 
 // Types
 type Vendor = {
@@ -75,7 +78,16 @@ export default function VendorsPage() {
   // State
   const [view, setView] = useState<"list" | "badges">("list");
   const [isRelationshipModalOpen, setIsRelationshipModalOpen] = useState(false);
-  const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  const { data: vendorsResponse, isLoading } = useGetAllVendorsQuery({ page: currentPage, limit: 10 });
+  const [deleteVendor] = useDeleteVendorMutation();
+  const [createVendor] = useCreateVendorMutation();
+
+  const vendors = vendorsResponse?.data || [];
+  const meta = vendorsResponse?.meta || { totalPage: 1, total: 0 };
   const [badges, setBadges] = useState<Badge[]>(initialBadges);
 
   // Form State
@@ -146,6 +158,7 @@ export default function VendorsPage() {
           
           <Button 
             onClick={() => {
+                if (view === "list") setIsAddModalOpen(true);
                 if (view === "badges") setIsRelationshipModalOpen(true);
             }} 
             className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold w-full md:w-auto"
@@ -170,15 +183,41 @@ export default function VendorsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {vendors.map((vendor, i) => (
-                            <TableRow key={i} className="hover:bg-gray-50 border-b border-gray-100 last:border-0">
-                                <TableCell className="font-medium text-gray-600 py-4 pl-6">{vendor.id}</TableCell>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-20">
+                                    <Loader />
+                                </TableCell>
+                            </TableRow>
+                        ) : vendors.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-20 text-gray-500">
+                                    No vendors found
+                                </TableCell>
+                            </TableRow>
+                        ) : vendors.map((vendor: any, i: number) => (
+                            <TableRow key={vendor._id || i} className="hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                                <TableCell className="font-medium text-gray-600 py-4 pl-6">
+                                    {((currentPage - 1) * 10 + i + 1).toString().padStart(2, '0')}
+                                </TableCell>
                                 <TableCell className="text-gray-900 font-medium py-4">{vendor.name}</TableCell>
-                                <TableCell className="text-gray-600 py-4">{vendor.badge}</TableCell>
-                                <TableCell className="text-gray-600 py-4">{vendor.type}</TableCell>
+                                <TableCell className="text-gray-600 py-4">Partner</TableCell>
+                                <TableCell className="text-gray-600 py-4">{vendor.serviceType || "N/A"}</TableCell>
                                 <TableCell className="py-4 pr-6">
                                     <div className="flex items-center justify-end gap-3">
-                                        <button className="text-red-500 hover:text-red-600 transition-colors">
+                                        <button 
+                                            onClick={async () => {
+                                                if (window.confirm("Are you sure you want to delete this vendor?")) {
+                                                    try {
+                                                        await deleteVendor(vendor._id).unwrap();
+                                                        toast.success("Vendor deleted successfully");
+                                                    } catch (error) {
+                                                        toast.error("Failed to delete vendor");
+                                                    }
+                                                }
+                                            }}
+                                            className="text-red-500 hover:text-red-600 transition-colors"
+                                        >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
                                         <button className="text-gray-800 hover:text-black transition-colors">
@@ -196,16 +235,38 @@ export default function VendorsPage() {
                 <Pagination>
                     <PaginationContent>
                         <PaginationItem>
-                            <PaginationPrevious href="#" className="text-gray-500 hover:text-[#2E6F65]" />
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <PaginationPrevious className="hover:bg-transparent p-0 h-auto" />
+                            </button>
                         </PaginationItem>
+                        
+                        {Array.from({ length: meta.totalPage }, (_, i) => i + 1).map((page) => (
+                            <PaginationItem key={page}>
+                                <button 
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-lg border-0 transition-colors ${
+                                        currentPage === page 
+                                        ? "bg-[#2E6F65] text-white" 
+                                        : "text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100"
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            </PaginationItem>
+                        ))}
+
                         <PaginationItem>
-                             <PaginationLink href="#" isActive className="bg-[#2E6F65] text-white hover:bg-[#2E6F65]/90 hover:text-white border-0">1</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                             <PaginationLink href="#" className="text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100 border-0">2</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                             <PaginationNext href="#" className="text-gray-500 hover:text-[#2E6F65]" />
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.min(meta.totalPage, prev + 1))}
+                                disabled={currentPage === meta.totalPage}
+                                className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <PaginationNext className="hover:bg-transparent p-0 h-auto" />
+                            </button>
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>
@@ -402,6 +463,129 @@ export default function VendorsPage() {
         </div>
       )}
 
+       {/* Add Vendor Modal */}
+       <AddVendorModal 
+          isOpen={isAddModalOpen} 
+          onClose={() => setIsAddModalOpen(false)} 
+          onSubmit={async (formData) => {
+             try {
+                await createVendor(formData).unwrap();
+                toast.success("Vendor created successfully");
+                setIsAddModalOpen(false);
+             } catch (error) {
+                toast.error("Failed to create vendor");
+             }
+          }}
+       />
+
     </div>
   );
 }
+
+// Add Vendor Modal Component
+const AddVendorModal = ({ isOpen, onClose, onSubmit }: { isOpen: boolean; onClose: () => void; onSubmit: (data: FormData) => Promise<void> }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
+    await onSubmit(formData);
+    setIsLoading(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setPreview(reader.result as string);
+          reader.readAsDataURL(file);
+      }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+        <div className="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+           <h2 className="text-xl font-bold text-[#2E6F65]">Add New Vendor</h2>
+           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" name="name" required placeholder="Malik service" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" required placeholder="vendor1@gmail.com" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" name="phone" required placeholder="0101010101" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="serviceType">Service Type</Label>
+                <Input id="serviceType" name="serviceType" required placeholder="Catering" />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" name="address" required placeholder="123 Street Name" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" name="city" required placeholder="New York" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="state">State</Label>
+                <Input id="state" name="state" required placeholder="state" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="zip">Zip</Label>
+                <Input id="zip" name="zip" required placeholder="10001" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" name="country" required placeholder="USA" />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="serviceDescription">Service Description</Label>
+                <Textarea id="serviceDescription" name="serviceDescription" required placeholder="High-quality catering services..." />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Vendor Image</Label>
+                <div className="flex items-center gap-4">
+                   <div className="w-20 h-20 bg-gray-100 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden">
+                      {preview ? (
+                          <Image src={preview} alt="preview" fill className="object-cover" />
+                      ) : (
+                          <ImageIcon className="text-gray-300 w-8 h-8" />
+                      )}
+                   </div>
+                   <Input 
+                      type="file" 
+                      name="image" 
+                      accept="image/*" 
+                      onChange={handleImageChange}
+                      className="flex-1 cursor-pointer"
+                      required
+                   />
+                </div>
+              </div>
+           </div>
+           
+           <div className="pt-4 flex gap-3">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+              <Button type="submit" disabled={isLoading} className={`flex-1 ${buttonbg}`}>
+                {isLoading ? "Creating..." : "Create Vendor"}
+              </Button>
+           </div>
+        </form>
+      </div>
+    </div>
+  );
+};

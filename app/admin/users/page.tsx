@@ -32,22 +32,11 @@ import { Button } from "@/components/ui/button";
 import { Eye, Ban, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import { useGetAllUserQuery, useChangeStatusMutation } from "@/store/api/userApi";
+import { Loader } from "@/components/ui/loader";
+import { toast } from "sonner"; // Assuming sonner is used for notifications based on common project patterns
 
-// Mock Data
-const generateUsers = () => {
-  return Array(8).fill(null).map((_, i) => ({
-    id: "01",
-    name: "Robert Fox",
-    email: "fox@email",
-    phone: "+123124",
-    date: "02-24-2024",
-    avatar: "/placeholder.png"
-  }));
-};
-
-const usersData = generateUsers();
-
-// User Detail Modal Component
+// Custom Modal for User Details
 const UserDetailModal = ({ isOpen, onClose, user }: { isOpen: boolean; onClose: () => void; user: any }) => {
   if (!isOpen) return null;
   return (
@@ -59,20 +48,20 @@ const UserDetailModal = ({ isOpen, onClose, user }: { isOpen: boolean; onClose: 
         <div className="text-center">
             <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden relative">
                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-xl font-bold">
-                    {user?.name?.charAt(0)}
+                    {user?.userName?.charAt(0)?.toUpperCase()}
                  </div>
             </div>
-          <h3 className="text-xl font-bold text-[#2E6F65]">{user?.name}</h3>
+          <h3 className="text-xl font-bold text-[#2E6F65]">{user?.userName}</h3>
           <p className="text-sm text-gray-500 mb-6">{user?.email}</p>
           
           <div className="space-y-3 text-left">
              <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500">Phone</span>
-                <span className="font-medium">{user?.phone}</span>
+                <span className="font-medium">{user?.phone || "N/A"}</span>
              </div>
              <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500">Joined Date</span>
-                <span className="font-medium">{user?.date}</span>
+                <span className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</span>
              </div>
              <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500">Status</span>
@@ -89,11 +78,50 @@ export default function UsersPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   
   const [userToBlock, setUserToBlock] = useState<any>(null);
   const [isBlockOpen, setIsBlockOpen] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setDebouncedSearch(searchTerm);
+        setCurrentPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: usersResponse, isLoading } = useGetAllUserQuery({
+    page: currentPage,
+    limit: 10,
+    searchTerm: debouncedSearch
+  });
+
+  const [changeStatus] = useChangeStatusMutation();
+
+  const usersData = usersResponse?.data || [];
+  const meta = usersResponse?.meta || { totalPages: 1, totalUsers: 0 };
+
+  const handleBlockUser = async () => {
+    if (!userToBlock) return;
+    try {
+        await changeStatus({ 
+            id: userToBlock._id, 
+            status: { status: "blocked" } 
+        }).unwrap();
+        toast.success("User blocked successfully");
+        setIsBlockOpen(false);
+        setUserToBlock(null);
+    } catch (error) {
+        toast.error("Failed to block user");
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -118,6 +146,8 @@ export default function UsersPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input 
                     placeholder="Search User" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 bg-white border-none h-11 text-gray-900 placeholder:text-gray-400 rounded-lg"
                 />
             </div>
@@ -153,22 +183,38 @@ export default function UsersPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {usersData.map((u, i) => (
-                        <TableRow key={i} className="hover:bg-gray-50 border-b border-gray-100">
-                             <TableCell className="font-medium text-gray-600 py-4">{i + 1}</TableCell>
+                    {isLoading ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center py-20">
+                                <Loader />
+                            </TableCell>
+                        </TableRow>
+                    ) : usersData.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center py-20 text-gray-500">
+                                No users found
+                            </TableCell>
+                        </TableRow>
+                    ) : usersData.map((u: any, i: number) => (
+                        <TableRow key={u._id || i} className="hover:bg-gray-50 border-b border-gray-100">
+                             <TableCell className="font-medium text-gray-600 py-4">
+                                {(currentPage - 1) * 10 + i + 1}
+                             </TableCell>
                              <TableCell className="py-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden relative">
                                          <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-500">
-                                            {u.name.charAt(0)}
+                                            {u.userName?.charAt(0)?.toUpperCase()}
                                          </div>
                                     </div>
-                                    <span className="font-medium text-gray-900">{u.name}</span>
+                                    <span className="font-medium text-gray-900">{u.userName}</span>
                                 </div>
                              </TableCell>
                              <TableCell className="text-gray-600 py-4">{u.email}</TableCell>
-                             <TableCell className="text-gray-600 py-4">{u.phone}</TableCell>
-                             <TableCell className="text-gray-600 py-4">{u.date}</TableCell>
+                             <TableCell className="text-gray-600 py-4">{u.phone || "N/A"}</TableCell>
+                             <TableCell className="text-gray-600 py-4">
+                                {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A"}
+                             </TableCell>
                              <TableCell className="py-4">
                                 <div className="flex items-center justify-center gap-3">
                                     <button 
@@ -199,31 +245,38 @@ export default function UsersPage() {
          <Pagination>
             <PaginationContent>
                 <PaginationItem>
-                    <PaginationPrevious href="#" className="text-gray-500 hover:text-[#2E6F65]" />
+                    <button 
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <PaginationPrevious className="hover:bg-transparent p-0 h-auto" />
+                    </button>
                 </PaginationItem>
+                
+                {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                        <button 
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg border-0 transition-colors ${
+                                currentPage === page 
+                                ? "bg-[#2E6F65] text-white" 
+                                : "text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100"
+                            }`}
+                        >
+                            {page}
+                        </button>
+                    </PaginationItem>
+                ))}
+
                 <PaginationItem>
-                    <PaginationLink href="#" isActive className="bg-[#2E6F65] text-white hover:bg-[#2E6F65]/90 hover:text-white border-0">1</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                    <PaginationLink href="#" className="text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100 border-0">2</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                    <PaginationLink href="#" className="text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100 border-0">3</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                    <span className="flex items-center justify-center h-9 w-9 text-gray-400">...</span>
-                </PaginationItem>
-                <PaginationItem>
-                    <PaginationLink href="#" className="text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100 border-0">30</PaginationLink>
-                </PaginationItem>
-                 <PaginationItem>
-                    <PaginationLink href="#" className="text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100 border-0">60</PaginationLink>
-                </PaginationItem>
-                 <PaginationItem>
-                    <PaginationLink href="#" className="text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100 border-0">120</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                    <PaginationNext href="#" className="text-gray-500 hover:text-[#2E6F65]" />
+                    <button 
+                        onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
+                        disabled={currentPage === meta.totalPages}
+                        className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <PaginationNext className="hover:bg-transparent p-0 h-auto" />
+                    </button>
                 </PaginationItem>
             </PaginationContent>
          </Pagination>
@@ -244,11 +297,7 @@ export default function UsersPage() {
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setUserToBlock(null)}>Cancel</AlertDialogCancel>
                 <AlertDialogAction 
-                    onClick={() => { 
-                        // Implement block logic here
-                        console.log("Blocking user:", userToBlock?.id); 
-                        setIsBlockOpen(false); 
-                    }} 
+                    onClick={handleBlockUser} 
                     className="bg-red-500 hover:bg-red-600 text-white"
                 >
                     Block

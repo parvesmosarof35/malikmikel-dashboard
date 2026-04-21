@@ -25,26 +25,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Eye, Ban, X } from "lucide-react";
 import { buttonbg } from "@/contexts/theme";
-import { useGetAllUserQuery } from "@/store/api/userApi";
+import { useGetDashboardDataQuery } from "@/store/api/dashboardStatsApi";
 import { Loader } from "@/components/ui/loader";
 
-// Mock Data for Chart
-const chartData = [
-  { month: "Jan", users: 680 },
-  { month: "Feb", users: 380 },
-  { month: "Mar", users: 780 },
-  { month: "Apr", users: 550 },
-  { month: "May", users: 440 },
-  { month: "June", users: 820 },
-  { month: "July", users: 550 },
-  { month: "Aug", users: 600 },
-  { month: "Sep", users: 820 },
-  { month: "Oct", users: 720 },
-  { month: "Nov", users: 550 },
-  { month: "Dec", users: 780 },
-];
-
-const maxVal = Math.max(...chartData.map((d) => d.users));
+// Data will be fetched from API
 
 // Mock Data for Users - Replaced with API
 // const recentUsers = Array(6).fill({ ... });
@@ -96,8 +80,17 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
-  const { data: usersData, isLoading } = useGetAllUserQuery({ page: 1, limit: 10 });
-  const recentUsers = usersData?.data || [];
+  const [selectedYear, setSelectedYear] = useState(2026);
+  const { data: dashboardData, isLoading } = useGetDashboardDataQuery(selectedYear);
+
+  const stats = dashboardData?.data?.totals || { users: 0, vendors: 0 };
+  const chartData = dashboardData?.data?.monthlyGrowth?.users || [];
+  const recentUsers = dashboardData?.data?.recentUsers || [];
+
+  // Calculate dynamic max value for chart scaling
+  const dataMaxVal = chartData.length > 0 ? Math.max(...chartData.map((d: any) => d.count)) : 0;
+  const chartMax = dataMaxVal > 0 ? Math.ceil(dataMaxVal / 100) * 100 : 1000;
+  const gridValues = [chartMax, chartMax * 0.75, chartMax * 0.5, chartMax * 0.25, 0];
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -115,12 +108,12 @@ export default function AdminDashboard() {
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-100">
-             <h2 className="text-4xl font-bold text-gray-900 mb-2">38.6K</h2>
+             <h2 className="text-4xl font-bold text-gray-900 mb-2">{stats.users.toLocaleString()}</h2>
              <p className="text-[#58976B] font-medium">Users</p>
         </div>
         <div className="p-8 flex flex-col items-center justify-center">
-             <h2 className="text-4xl font-bold text-gray-900 mb-2">4.9M</h2>
-             <p className="text-[#58976B] font-medium">Total Revenue</p>
+             <h2 className="text-4xl font-bold text-gray-900 mb-2">{stats.vendors.toLocaleString()}</h2>
+             <p className="text-[#58976B] font-medium">Vendors</p>
         </div>
       </div>
 
@@ -134,9 +127,15 @@ export default function AdminDashboard() {
                     <span className="text-sm text-gray-500">Users</span>
                 </div>
             </div>
-            <select className="bg-[#2E6F65] text-white px-4 py-2 rounded-lg text-sm border-none outline-none cursor-pointer">
-                <option>Year-2024</option>
-                <option>Year-2023</option>
+            <select 
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-[#2E6F65] text-white px-4 py-2 rounded-lg text-sm border-none outline-none cursor-pointer"
+            >
+                <option value={2027}>Year-2027</option>
+                <option value={2026}>Year-2026</option>
+                <option value={2025}>Year-2025</option>
+                <option value={2024}>Year-2024</option>
             </select>
         </div>
 
@@ -144,9 +143,9 @@ export default function AdminDashboard() {
         <div className="relative h-[300px] w-full mt-10">
             {/* Grid Lines */}
             <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-400 pointer-events-none">
-                {[800, 600, 400, 200, 0].map((val) => (
+                {gridValues.map((val) => (
                     <div key={val} className="flex items-center w-full">
-                        <span className="w-10 text-right pr-2">{val.toFixed(2)}</span>
+                        <span className="w-10 text-right pr-2">{val.toFixed(0)}</span>
                         <div className="h-[1px] flex-1 bg-gray-100 border-dashed border-gray-200"></div>
                     </div>
                 ))}
@@ -154,14 +153,14 @@ export default function AdminDashboard() {
 
             {/* Bars */}
             <div className="absolute inset-0 flex justify-between items-end pl-12 pr-4 pt-4">
-                {chartData.map((data, index) => {
-                    const heightPercent = (data.users / 800) * 100;
+                {chartData.map((data: any, index: number) => {
+                    const heightPercent = (data.count / chartMax) * 100;
                     return (
                         <div key={index} className="flex flex-col items-center justify-end gap-2 group w-full h-full"> 
                              {/* Tooltip on hover */}
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-0 bg-[#FCD34D] text-[#0D0D0D] text-xs py-1 px-3 rounded shadow-sm mb-2 z-10 pointer-events-none whitespace-nowrap">
                                 <p className="font-bold">Users</p>
-                                <p>{data.users}</p>
+                                <p>{data.count}</p>
                                 <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-[#FCD34D]"></div>
                             </div>
                             

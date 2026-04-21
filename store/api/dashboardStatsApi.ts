@@ -56,6 +56,13 @@ export const dashboardStatsApi = baseApi.injectEndpoints({
       },
       providesTags: ["dashboard"],
     }),
+    getDashboardData: build.query({
+      query: (year) => ({
+        url: `/dashboard/?year=${year}`,
+        method: "GET",
+      }),
+      providesTags: ["dashboard"],
+    }),
   }),
 });
 
@@ -67,4 +74,5 @@ export const {
   useGetConsultantTotalClientsQuery,
   useGetConsultantTotalEarningsQuery,
   useGetConsultantServedClientsQuery,
+  useGetDashboardDataQuery,
 } = dashboardStatsApi;
