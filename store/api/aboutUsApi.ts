@@ -1,26 +1,23 @@
 import { baseApi } from "./baseApi";
 
 const aboutUsApi = baseApi.injectEndpoints({
-      endpoints: (builder) => ({
-            getAboutUs: builder.query({
-                  query: () => ({
-                        url: 'settings/find_by_about_us',
-                        method: 'GET',
-                  }),
-                  providesTags: ['aboutUs'],
-            }),
-            updateAboutUs: builder.mutation({
-                  query: (data) => ({
-                        url: 'settings/about',
-                        method: 'POST',
-                        body: data,
-                  }),
-                  invalidatesTags: ['aboutUs'],
-            }),
+  endpoints: (builder) => ({
+    getAboutUs: builder.query({
+      query: () => ({
+        url: "legalDoc/create-doc/aboutUs",
+        method: "GET",
       }),
+      providesTags: ["aboutUs"],
+    }),
+    updateAboutUs: builder.mutation({
+      query: (data) => ({
+        url: "legalDoc/create-doc/aboutUs",
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["aboutUs"],
+    }),
+  }),
 });
 
-export const {
-      useGetAboutUsQuery,
-      useUpdateAboutUsMutation
-} = aboutUsApi;
+export const { useGetAboutUsQuery, useUpdateAboutUsMutation } = aboutUsApi;

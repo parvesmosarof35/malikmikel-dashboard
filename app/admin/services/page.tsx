@@ -1,0 +1,662 @@
+"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Trash2, 
+  Edit, 
+  Plus, 
+  Image as ImageIcon,
+  CheckCircle2,
+  Star,
+  Clock,
+  X,
+  MapPin,
+  Search,
+  Upload,
+  Calendar,
+  Tag
+} from "lucide-react";
+import Image from "next/image";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { buttonbg, textPrimary, borderPrimary } from "@/contexts/theme";
+import { 
+    useGetAllServicesQuery, 
+    useDeleteServiceMutation, 
+    useCreateServiceMutation 
+} from "@/store/api/serviceApi";
+import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
+import { Loader } from "@/components/ui/loader";
+import { toast } from "sonner";
+
+const GOOGLE_MAPS_API_KEY = "AIzaSyCHBKvR2Wgc4eF53nYTlGYxULSQuVpb9t4";
+
+export default function ServicesPage() {
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  const { data: servicesResponse, isLoading, refetch } = useGetAllServicesQuery({ 
+    page: currentPage, 
+    limit: 10,
+    searchTerm: searchTerm
+  });
+  
+  const [deleteService] = useDeleteServiceMutation();
+  const [createService] = useCreateServiceMutation();
+
+  const services = servicesResponse?.data || [];
+  const meta = servicesResponse?.meta || { totalPage: 1, total: 0 };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/auth");
+    } else if (user?.role !== "admin") {
+      router.push("/");
+    }
+  }, [isAuthenticated, user, router]);
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this service?")) {
+      try {
+        await deleteService(id).unwrap();
+        toast.success("Service deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error("Failed to delete service");
+      }
+    }
+  };
+
+  if (!user || user.role !== "admin") return null;
+
+  return (
+    <div className="min-h-screen bg-transparent p-6 space-y-6">
+      
+      {/* Header */}
+      <div className={`${buttonbg} rounded-t-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg`}>
+          <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Tag className="w-6 h-6" />
+                  Service Management
+              </h1>
+              
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" />
+                <input 
+                  type="text"
+                  placeholder="Search services..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg py-2 pl-10 pr-4 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                />
+              </div>
+          </div>
+          
+          <Button 
+            onClick={() => setIsAddModalOpen(true)} 
+            className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold px-6 py-6 rounded-xl shadow-md transition-all active:scale-95 group"
+          >
+              <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+              Add New Service
+          </Button>
+      </div>
+
+      {/* Content Area */}
+      <div className="bg-white rounded-b-xl shadow-xl border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between">
+         <div className="overflow-x-auto">
+            <Table>
+                <TableHeader className="bg-gray-50/50">
+                    <TableRow className="border-b border-gray-100 hover:bg-transparent">
+                        <TableHead className={`font-bold py-5 ${textPrimary} pl-6`}>S.ID</TableHead>
+                        <TableHead className={`font-bold py-5 ${textPrimary}`}>Image</TableHead>
+                        <TableHead className={`font-bold py-5 ${textPrimary}`}>Service Name</TableHead>
+                        <TableHead className={`font-bold py-5 ${textPrimary}`}>Category</TableHead>
+                        <TableHead className={`font-bold py-5 ${textPrimary}`}>Address</TableHead>
+                        <TableHead className={`font-bold py-5 ${textPrimary}`}>Rating</TableHead>
+                        <TableHead className={`font-bold py-5 ${textPrimary} text-right pr-6`}>Action</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {isLoading ? (
+                        <TableRow>
+                            <TableCell colSpan={7} className="text-center py-24">
+                                <Loader />
+                            </TableCell>
+                        </TableRow>
+                    ) : services.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={7} className="text-center py-24 text-gray-400">
+                                <div className="flex flex-col items-center gap-2">
+                                    <Tag className="w-12 h-12 text-gray-200" />
+                                    <p className="text-lg font-medium">No services found</p>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ) : services.map((service: any, i: number) => (
+                        <TableRow key={service._id || i} className="hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-0 group">
+                            <TableCell className="font-medium text-gray-500 py-4 pl-6">
+                                {((currentPage - 1) * 10 + i + 1).toString().padStart(2, '0')}
+                            </TableCell>
+                            <TableCell className="py-4">
+                                <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
+                                    <Image src={service.image || "/placeholder.png"} alt={service.name} fill className="object-cover" />
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-gray-900 font-bold py-4">{service.name}</TableCell>
+                            <TableCell className="text-gray-600 py-4">
+                                <span className="px-3 py-1 rounded-full bg-green-50 text-[#2E6F65] text-xs font-semibold">
+                                    {service.cetagory?.name || "N/A"}
+                                </span>
+                            </TableCell>
+                            <TableCell className="text-gray-500 py-4 max-w-[200px] truncate">
+                                <div className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    {service.address}
+                                </div>
+                            </TableCell>
+                            <TableCell className="py-4">
+                                <div className="flex items-center gap-1 text-orange-500 font-bold">
+                                    <Star className="w-4 h-4 fill-current" />
+                                    {service.averageRating?.toFixed(1) || "0.0"}
+                                </div>
+                            </TableCell>
+                            <TableCell className="py-4 pr-6 text-right">
+                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit"
+                                    >
+                                        <Edit className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(service._id)}
+                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+         </div>
+
+         {/* Pagination */}
+         <div className="p-6 border-t border-gray-100 bg-gray-50/30">
+            <Pagination>
+                <PaginationContent className="gap-2">
+                    <PaginationItem>
+                        <button 
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="flex items-center gap-1 px-4 py-2 rounded-lg text-gray-500 hover:text-[#2E6F65] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium"
+                        >
+                            <PaginationPrevious className="hover:bg-transparent p-0 h-auto" />
+                        </button>
+                    </PaginationItem>
+                    
+                    {Array.from({ length: meta.totalPage || 1 }, (_, i) => i + 1).map((page) => (
+                        <PaginationItem key={page}>
+                            <button 
+                                onClick={() => setCurrentPage(page)}
+                                className={`w-10 h-10 flex items-center justify-center rounded-lg border-0 transition-all font-bold shadow-sm ${
+                                    currentPage === page 
+                                    ? "bg-[#2E6F65] text-white scale-110 shadow-[#2E6F65]/20" 
+                                    : "bg-white text-gray-600 hover:text-[#2E6F65] hover:shadow-md"
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        </PaginationItem>
+                    ))}
+
+                    <PaginationItem>
+                        <button 
+                            onClick={() => setCurrentPage(prev => Math.min(meta.totalPage || 1, prev + 1))}
+                            disabled={currentPage === meta.totalPage || meta.totalPage === 0}
+                            className="flex items-center gap-1 px-4 py-2 rounded-lg text-gray-500 hover:text-[#2E6F65] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium"
+                        >
+                            <PaginationNext className="hover:bg-transparent p-0 h-auto" />
+                        </button>
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+         </div>
+      </div>
+
+      {/* Add Service Modal */}
+      <AddServiceModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={() => {
+            setIsAddModalOpen(false);
+            refetch();
+        }}
+      />
+
+    </div>
+  );
+}
+
+// Add Service Modal Component
+const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [previews, setPreviews] = useState<{
+    main: string | null;
+    visitors: string[];
+    menu: string[];
+  }>({ main: null, visitors: [], menu: [] });
+
+  const [location, setLocation] = useState({ address: "", lat: "", lng: "" });
+  const [hotelName, setHotelName] = useState("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: categoriesResponse } = useGetAllCategoriesQuery({ limit: 100 });
+  const categories = categoriesResponse?.data || [];
+  
+  const [createService] = useCreateServiceMutation();
+
+  // Load Google Maps script and init Places Autocomplete on the input
+  useEffect(() => {
+    if (!isOpen) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const g = (window as any).google;
+
+    const initAutocomplete = () => {
+      if (!searchInputRef.current) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const gMaps = (window as any).google;
+      if (!gMaps?.maps?.places) return;
+      const ac = new gMaps.maps.places.Autocomplete(searchInputRef.current, {
+        types: ["establishment"],
+        fields: ["name", "formatted_address", "geometry"],
+      });
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace();
+        if (place.geometry?.location) {
+          const name = place.name || "";
+          const addr = place.formatted_address || "";
+          const lat = place.geometry.location.lat().toString();
+          const lng = place.geometry.location.lng().toString();
+          setHotelName(name);
+          setLocation({ address: addr, lat, lng });
+          if (searchInputRef.current) searchInputRef.current.value = name + (addr ? ", " + addr : "");
+        }
+      });
+    };
+
+    // If Maps already loaded, init immediately
+    if (g?.maps?.places) {
+      initAutocomplete();
+      return;
+    }
+
+    // Otherwise inject script if not already present
+    const scriptId = "google-maps-places-script";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    } else {
+      // Script tag exists but might still be loading — wait for it
+      const existing = document.getElementById(scriptId) as HTMLScriptElement;
+      existing.addEventListener("load", initAutocomplete);
+    }
+  }, [isOpen]);
+
+  const handleImageChange = (type: 'main' | 'visitors' | 'menu', e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    if (type === 'main') {
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => setPreviews(prev => ({ ...prev, main: reader.result as string }));
+        reader.readAsDataURL(file);
+    } else {
+        const fileList = Array.from(files);
+        fileList.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => setPreviews(prev => ({ 
+                ...prev, 
+                [type]: [...prev[type], reader.result as string] 
+            }));
+            reader.readAsDataURL(file);
+        });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+        const formData = new FormData(e.currentTarget);
+        // Add coordinates and name if set via autocomplete
+        if (location.lat) formData.append("latitude", location.lat);
+        if (location.lng) formData.append("longitude", location.lng);
+        
+        await createService(formData).unwrap();
+        toast.success("Service created successfully!");
+        onSuccess();
+    } catch (error) {
+        console.error(error);
+        toast.error("Failed to create service");
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 md:p-8 animate-in fade-in duration-300">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
+        
+        {/* Modal Header */}
+        <div className="p-8 border-b flex justify-between items-center bg-gray-50/80 sticky top-0 z-20">
+           <div>
+               <h2 className="text-3xl font-black text-[#2E6F65] tracking-tight">Create Premium Service</h2>
+               <p className="text-gray-500 mt-1 font-medium">Fill in the details to list a new service on the platform.</p>
+           </div>
+           <button 
+                onClick={onClose} 
+                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100 text-gray-400 hover:text-gray-600 hover:shadow-md transition-all active:scale-90"
+            >
+                <X className="w-6 h-6" />
+            </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-8 space-y-10 overflow-y-auto flex-1 bg-white">
+           
+           {/* Section: Basic Info */}
+           <div className="space-y-6">
+               <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                   <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2E6F65]">
+                       <Tag className="w-5 h-5" />
+                   </div>
+                   <h3 className="text-xl font-bold text-gray-800">Basic Information</h3>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Service Name</Label>
+                    <Input 
+                        name="name" 
+                        required 
+                        placeholder="Grand Royal Hotel" 
+                        value={hotelName}
+                        onChange={(e) => setHotelName(e.target.value)}
+                        className="h-12 rounded-xl focus:ring-[#2E6F65] border-gray-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="font-bold text-gray-700">Category</Label>
+                      <select 
+                          name="cetagory" 
+                          required 
+                          onChange={(e) => {
+                              // find by value (could be ObjectId or fallback name)
+                              const cat = categories.find((c: any) => c._id === e.target.value);
+                              // get name from selected option text as fallback
+                              const selectedOption = e.target.options[e.target.selectedIndex];
+                              setSelectedCategoryName(cat?.name || selectedOption?.text || "");
+                          }}
+                          className="w-full h-12 rounded-xl border border-gray-200 px-4 focus:ring-2 focus:ring-[#2E6F65] focus:outline-none transition-all"
+                      >
+                          <option value="">Select Category</option>
+                          {["Restaurants", "Excursions", "Events"].map((name) => {
+                              // use real ObjectId from API if category exists, else use name as value
+                              const found = categories.find(
+                                  (c: any) => (c.name as string).toLowerCase() === name.toLowerCase()
+                              );
+                              return (
+                                  <option key={name} value={found?._id || name}>
+                                      {name}
+                                  </option>
+                              );
+                          })}
+                      </select>
+                   </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Sub Category</Label>
+                    <Input name="subCetagory" required placeholder="Luxury / Boutique" className="h-12 rounded-xl border-gray-200" />
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-3 space-y-2">
+                    <Label className="font-bold text-gray-700">Description</Label>
+                    <Textarea name="description" placeholder="Describe the service, amenities, and unique selling points..." className="min-h-[120px] rounded-2xl border-gray-200" />
+                  </div>
+               </div>
+           </div>
+
+           {/* Section: Location (Google Maps Integration) */}
+           <div className="space-y-6">
+               <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                       <MapPin className="w-5 h-5" />
+                   </div>
+                   <h3 className="text-xl font-bold text-gray-800">Location & Maps</h3>
+               </div>
+               
+                <div className="space-y-4">
+                   <div className="space-y-2">
+                     <Label className="font-bold text-gray-700">Search Address on Map</Label>
+                     <div className="relative">
+                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none z-10" />
+                         <input 
+                             ref={searchInputRef}
+                             id="maps-autocomplete-input"
+                             type="text"
+                             placeholder="Start typing hotel or address..."
+                             className="w-full h-14 rounded-2xl pl-12 pr-4 bg-gray-50 border border-transparent focus:bg-white focus:border-[#2E6F65] focus:outline-none focus:ring-2 focus:ring-[#2E6F65]/20 transition-all text-gray-800 placeholder:text-gray-400"
+                         />
+                     </div>
+                   </div>
+                </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                          <Label className="font-bold text-gray-700 text-xs uppercase tracking-wider">Final Address</Label>
+                          <Input name="address" required value={location.address} onChange={(e) => setLocation(prev => ({ ...prev, address: e.target.value }))} className="h-12 rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                          <Label className="font-bold text-gray-700 text-xs uppercase tracking-wider">Latitude</Label>
+                          <Input name="latitude" value={location.lat} onChange={(e) => setLocation(prev => ({ ...prev, lat: e.target.value }))} className="h-12 rounded-xl bg-gray-50" readOnly />
+                      </div>
+                      <div className="space-y-2">
+                          <Label className="font-bold text-gray-700 text-xs uppercase tracking-wider">Longitude</Label>
+                          <Input name="longitude" value={location.lng} onChange={(e) => setLocation(prev => ({ ...prev, lng: e.target.value }))} className="h-12 rounded-xl bg-gray-50" readOnly />
+                      </div>
+                  </div>
+               </div>
+
+           {/* Section: Media Uploads */}
+           <div className="space-y-6">
+               <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                   <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                       <ImageIcon className="w-5 h-5" />
+                   </div>
+                   <h3 className="text-xl font-bold text-gray-800">Media Gallery</h3>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {/* Main Image */}
+                  <div className="space-y-3">
+                    <Label className="font-bold text-gray-700">Main Cover Image</Label>
+                    <div 
+                        className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-[#2E6F65]/50 transition-all cursor-pointer group flex flex-col items-center justify-center overflow-hidden"
+                        onClick={() => document.getElementById('main-img')?.click()}
+                    >
+                        {previews.main ? (
+                            <Image src={previews.main} alt="Main" fill className="object-cover" />
+                        ) : (
+                            <>
+                                <Upload className="w-10 h-10 text-gray-300 group-hover:text-[#2E6F65] transition-colors mb-2" />
+                                <p className="text-xs font-bold text-gray-400 group-hover:text-gray-600">Click to upload cover</p>
+                            </>
+                        )}
+                        <input id="main-img" type="file" name="image" className="hidden" onChange={(e) => handleImageChange('main', e)} required />
+                    </div>
+                  </div>
+
+                  {/* Visitor Photos */}
+                  <div className="space-y-3">
+                    <Label className="font-bold text-gray-700">Visitor Photos (Multiple)</Label>
+                    <div 
+                        className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer flex flex-col items-center justify-center p-4 overflow-hidden"
+                        onClick={() => document.getElementById('visitor-img')?.click()}
+                    >
+                        <Upload className="w-10 h-10 text-gray-300 mb-2" />
+                        <p className="text-xs font-bold text-gray-400 text-center">{previews.visitors.length} Photos added</p>
+                        <input id="visitor-img" type="file" name="photoOfVisitor" multiple className="hidden" onChange={(e) => handleImageChange('visitors', e)} />
+                    </div>
+                  </div>
+
+                  {/* Menu Photos */}
+                  <div className="space-y-3">
+                    <Label className="font-bold text-gray-700">Hotel Menu (Multiple)</Label>
+                    <div 
+                        className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer flex flex-col items-center justify-center p-4 overflow-hidden"
+                        onClick={() => document.getElementById('menu-img')?.click()}
+                    >
+                        <Upload className="w-10 h-10 text-gray-300 mb-2" />
+                        <p className="text-xs font-bold text-gray-400 text-center">{previews.menu.length} Items added</p>
+                        <input id="menu-img" type="file" name="hotelMenu" multiple className="hidden" onChange={(e) => handleImageChange('menu', e)} />
+                    </div>
+                  </div>
+               </div>
+           </div>
+
+           {/* Section: Operational Info */}
+           <div className="space-y-6">
+               <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                   <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+                       <Clock className="w-5 h-5" />
+                   </div>
+                   <h3 className="text-xl font-bold text-gray-800">Operations & Timing</h3>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Open Time</Label>
+                    <Input type="time" name="openTime" className="h-12 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Close Time</Label>
+                    <Input type="time" name="closeTime" className="h-12 rounded-xl" />
+                  </div>
+                   {selectedCategoryName.toLowerCase() === "events" && (
+                     <>
+                       <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                         <Label className="font-bold text-gray-700">Starting Time</Label>
+                         <Input type="time" name="startTime" className="h-12 rounded-xl border-[#2E6F65]/30 bg-green-50/30" />
+                       </div>
+                       <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                         <Label className="font-bold text-gray-700">Ending Time</Label>
+                         <Input type="time" name="endTime" className="h-12 rounded-xl border-[#2E6F65]/30 bg-green-50/30" />
+                       </div>
+                     </>
+                   )}
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                   <div className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
+                       <div className="space-y-0.5">
+                           <p className="font-bold text-gray-800">Special Offer</p>
+                           <p className="text-xs text-gray-500">Enable discounts</p>
+                       </div>
+                       <Switch name="offer" className="data-[state=checked]:bg-[#2E6F65]" />
+                   </div>
+                   <div className="md:col-span-2 space-y-2">
+                        <Label className="font-bold text-gray-700">Offer Details</Label>
+                        <Input name="offerType" placeholder="e.g. 20% OFF on Weekend stays" className="h-12 rounded-xl" />
+                   </div>
+
+                   
+               </div>
+           </div>
+
+           {/* Section: Additional Stats (Placeholders for manual entry if needed) */}
+           <div className="space-y-6 pt-4 border-t border-gray-100">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Initial Rating</Label>
+                    <Input type="number" step="0.1" max="5" name="averageRating" defaultValue="0" className="h-12 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Response Time (Hrs)</Label>
+                    <Input type="number" name="responseTimeHours" defaultValue="0" className="h-12 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Date</Label>
+                    <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input type="text" name="date" placeholder="May 2024" className="h-12 rounded-xl pl-10" />
+                    </div>
+                  </div>
+               </div>
+           </div>
+           
+           {/* Form Actions */}
+           <div className="pt-10 flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-white pb-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose} 
+                className="flex-1 h-14 rounded-2xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all"
+              >
+                  Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isLoading} 
+                className={`flex-1 h-14 rounded-2xl ${buttonbg} font-bold text-lg shadow-lg shadow-[#2E6F65]/20 hover:scale-[1.02] active:scale-95 transition-all`}
+              >
+                {isLoading ? (
+                    <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Creating...
+                    </div>
+                ) : (
+                    "Create Premium Service"
+                )}
+              </Button>
+           </div>
+        </form>
+      </div>
+    </div>
+  );
+};
