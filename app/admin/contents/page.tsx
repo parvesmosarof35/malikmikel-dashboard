@@ -432,7 +432,7 @@ function LegalEditor({
 }
 
 function TermsSection() {
-  const { data, isLoading } = useGetTermsAndConditionsQuery();
+  const { data, isLoading } = useGetTermsAndConditionsQuery(undefined);
   const [updateTerms] = useUpdateTermsAndConditionsMutation();
   return (
     <LegalEditor
@@ -447,7 +447,7 @@ function TermsSection() {
 }
 
 function PrivacySection() {
-  const { data, isLoading } = useGetPrivacyQuery();
+  const { data, isLoading } = useGetPrivacyQuery(undefined);
   const [updatePrivacy] = useUpdatePrivacyMutation();
   return (
     <LegalEditor
@@ -462,7 +462,7 @@ function PrivacySection() {
 }
 
 function AboutSection() {
-  const { data, isLoading } = useGetAboutUsQuery();
+  const { data, isLoading } = useGetAboutUsQuery(undefined);
   const [updateAboutUs] = useUpdateAboutUsMutation();
   return (
     <LegalEditor

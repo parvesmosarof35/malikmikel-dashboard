@@ -17,6 +17,7 @@ import {
     FileText,
     BarChart, 
     Luggage,
+    MessageSquare,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -63,7 +64,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { name: "Services",        path: "/admin/services",        icon: Luggage },
     { name: "Category",        path: "/admin/category",        icon: Store },
     { name: "Contents",        path: "/admin/contents",        icon: FileText },
-    // { name: "Analytics",       path: "/admin/analytics",       icon: BarChart },
+    { name: "Faq",             path: "/admin/faq",             icon: FileText },
     { name: "Report",          path: "/admin/report",          icon: BarChart },
     { name: "Create Admin",    path: "/admin/create-admin",    icon: ShieldCheck },
     { name: "Settings",        path: "/admin/settings",        icon: Settings },
