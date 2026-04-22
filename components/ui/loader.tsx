@@ -1,4 +1,5 @@
 import React from 'react';
+import './loader.css';
 
 export function Loader({ className }: { className?: string }) {
   return (

@@ -37,11 +37,10 @@ import {
   Layers,
   ImageIcon,
   X,
-  Loader2,
   AlertCircle,
   RefreshCw,
   Tag,
-  Plus,
+  Plus
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
@@ -56,6 +55,7 @@ import {
 import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
 import { getImageUrl } from "@/store/config/envConfig";
 import { toast } from "sonner";
+import { Loader } from "@/components/ui/loader";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ParentCategory = {
@@ -270,7 +270,7 @@ export default function SubCategoryPage() {
       <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[400px] flex flex-col justify-between">
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin text-[#2E6F65]" />
+            <Loader className="w-8 h-8 animate-spin text-[#2E6F65]" />
             <p className="text-sm">Loading sub-categories…</p>
           </div>
         ) : isError ? (
@@ -567,7 +567,7 @@ export default function SubCategoryPage() {
               >
                 {isBusy ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader className="w-4 h-4 animate-spin" />
                     {modalMode === "create" ? "Creating…" : "Saving…"}
                   </span>
                 ) : modalMode === "create" ? "Create Sub-Category" : "Save Changes"}
@@ -597,7 +597,7 @@ export default function SubCategoryPage() {
             >
               {isDeleting ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Deleting…
+                  <Loader className="w-4 h-4 animate-spin" /> Deleting…
                 </span>
               ) : "Delete"}
             </AlertDialogAction>

@@ -36,6 +36,8 @@ const initialAdmins = [
   { id: 5, name: "Sarah Support", email: "sarah@example.com", role: "Support", status: "Active" },
 ];
 
+import { Loader } from "@/components/ui/loader";
+
 export default function CreateAdminPage() {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -81,7 +83,6 @@ export default function CreateAdminPage() {
             role: "Admin",
             status: "Active"
         };
-        setAdmins([...admins, newAdmin]);
         setAdmins([...admins, newAdmin]);
         setFormData({ fullName: "", email: "", password: "", confirmPassword: "", image: null });
     }, 1500);
@@ -184,10 +185,15 @@ export default function CreateAdminPage() {
                 <Button 
                     type="submit" 
                     variant="brand"
-                    className="w-full"
+                    className="w-full flex items-center justify-center gap-2"
                     disabled={isSubmitting}
                 >
-                    {isSubmitting ? "Creating..." : "Create Admin Account"}
+                    {isSubmitting ? (
+                        <>
+                            <Loader className="w-4 h-4 animate-spin" />
+                            Creating...
+                        </>
+                    ) : "Create Admin Account"}
                 </Button>
             </form>
           </div>

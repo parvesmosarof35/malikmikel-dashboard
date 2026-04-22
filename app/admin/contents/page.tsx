@@ -324,8 +324,13 @@ function FaqModal({ item, onClose, onSuccess }: { item: any; onClose: () => void
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl">
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className={`flex-1 h-12 rounded-xl ${buttonbg} font-bold`}>
-              {isLoading ? "Saving..." : item ? "Update FAQ" : "Create FAQ"}
+            <Button type="submit" disabled={isLoading} className={`flex-1 h-12 rounded-xl ${buttonbg} font-bold flex items-center justify-center gap-2`}>
+              {isLoading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : item ? "Update FAQ" : "Create FAQ"}
             </Button>
           </div>
         </form>
@@ -395,10 +400,19 @@ function LegalEditor({
           <Button
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className={`${buttonbg} gap-2 font-semibold`}
+            className={`${buttonbg} gap-2 font-semibold flex items-center justify-center`}
           >
-            <Save className="w-4 h-4" />
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes
+              </>
+            )}
           </Button>
         </div>
       </div>

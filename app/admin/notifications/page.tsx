@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
 import { buttonbg, textPrimary } from "@/contexts/theme";
+import { Loader } from "@/components/ui/loader";
 
 interface NotificationItem {
   _id: string;
@@ -148,7 +149,7 @@ export default function NotificationsPage() {
       {/* Page Loading */}
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
-          <Loader2 className={`w-10 h-10 animate-spin ${textPrimary}`} />
+          <Loader className={`w-10 h-10 animate-spin ${textPrimary}`} />
         </div>
       ) : (
         <>

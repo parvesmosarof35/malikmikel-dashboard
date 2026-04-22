@@ -47,7 +47,7 @@ import {
     useCreateServiceMutation 
 } from "@/store/api/serviceApi";
 import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
-import { Loader as Spinner } from "@/components/ui/loader";
+import { Loader, Loader as Spinner } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import { getImageUrl } from "@/store/config/envConfig";
@@ -672,7 +672,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
               >
                 {isLoading ? (
                     <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <Loader className="w-5 h-5 animate-spin" />
                         Creating...
                     </div>
                 ) : (

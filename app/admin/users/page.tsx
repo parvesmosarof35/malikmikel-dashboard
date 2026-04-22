@@ -64,8 +64,8 @@ const UserDetailModal = ({ isOpen, onClose, user }: { isOpen: boolean; onClose: 
                 <span className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</span>
              </div>
              <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">Status</span>
-                <span className="font-medium text-green-600">Active</span>
+                <span className="text-gray-500">Last Active</span>
+                <span className="font-medium">{user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : "N/A"}</span>
              </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default function UsersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const { data: usersResponse, isLoading } = useGetAllUserQuery({
+  const { data: usersResponse, isLoading, refetch } = useGetAllUserQuery({
     page: currentPage,
     limit: 10,
     searchTerm: debouncedSearch
@@ -116,6 +116,7 @@ export default function UsersPage() {
             status: { status: "blocked" } 
         }).unwrap();
         toast.success("User blocked successfully");
+        refetch();
         setIsBlockOpen(false);
         setUserToBlock(null);
     } catch (error) {
@@ -132,6 +133,14 @@ export default function UsersPage() {
   }, [isAuthenticated, user, router]);
 
   if (!user || user.role !== "admin") return null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6 space-y-6">

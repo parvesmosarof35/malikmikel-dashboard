@@ -6,6 +6,8 @@ import { ChevronLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { buttonbg } from "@/contexts/theme";
 
+import { Loader } from "@/components/ui/loader";
+
 export default function AboutUsPage() {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +35,7 @@ export default function AboutUsPage() {
   if (isLoading) {
       return (
         <div className="flex justify-center items-center h-[50vh]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <Loader />
         </div>
       );
   }
@@ -73,7 +75,7 @@ export default function AboutUsPage() {
         >
           {isSubmitting ? (
              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <Loader className="w-4 h-4 animate-spin" />
                 Saving...
              </>
           ) : (

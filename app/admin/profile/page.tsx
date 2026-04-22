@@ -79,10 +79,13 @@ export default function ProfilePage() {
   );
 }
 
+import { Loader } from "@/components/ui/loader";
+
 // --- Sub-components (Forms) ---
 
 function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () => void }) {
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  // ... rest of the component state ...
   const [formData, setFormData] = useState({
     userName: "",
     phone: "",
@@ -216,9 +219,14 @@ function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () =
       <Button 
         type="submit" 
         disabled={isLoading} 
-        className={`w-full ${buttonbg} cursor-pointer mt-4`}
+        className={`w-full ${buttonbg} cursor-pointer mt-4 flex items-center justify-center gap-2`}
       >
-        {isLoading ? "Updating..." : "Save Changes"}
+        {isLoading ? (
+          <>
+            <Loader className="w-4 h-4 animate-spin" />
+            Updating...
+          </>
+        ) : "Save Changes"}
       </Button>
     </form>
   );
@@ -319,9 +327,14 @@ function ChangePasswordForm({ adminData }: { adminData: any }) {
       <Button 
         type="submit" 
         disabled={isLoading} 
-        className={`w-full ${buttonbg} cursor-pointer mt-4`}
+        className={`w-full ${buttonbg} cursor-pointer mt-4 flex items-center justify-center gap-2`}
       >
-        {isLoading ? "Changing..." : "Change Password"}
+        {isLoading ? (
+          <>
+            <Loader className="w-4 h-4 animate-spin" />
+            Changing...
+          </>
+        ) : "Change Password"}
       </Button>
     </form>
   );
