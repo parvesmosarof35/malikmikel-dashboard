@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { activeTabClass, buttonbg } from "@/contexts/theme";
 import { useGetSingleAdminQuery, useChangePasswordAdminMutation } from "@/store/api/adminApi";
 import { useUpdateProfileMutation } from "@/store/api/userApi";
-import { imgUrl } from "@/store/config/envConfig";
+import { getImageUrl } from "@/store/config/envConfig";
 
 export default function ProfilePage() {
   const authUser = useAppSelector((state) => state.auth.user);
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   
   const [activeTab, setActiveTab] = useState("edit-profile");
 
-  const profileImage = adminData?.image ? `${imgUrl}${adminData.image.replace(/^\//, "")}` : null;
+  const profileImage = getImageUrl(adminData?.image);
   const profileName = adminData?.userName || adminData?.name || adminData?.fullName || "Admin User";
   const profileRole = adminData?.role || "Admin";
 

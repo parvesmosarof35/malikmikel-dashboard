@@ -24,8 +24,10 @@ export const serviceApi = baseApi.injectEndpoints({
                 if (instructor_id) params.append("instructor_id", instructor_id);
                 if (price) params.append("price", price);
 
+                if (category_id) params.append("cetagory", category_id);
+
                 return {
-                    url: `services/getallservices?${params.toString()}`,
+                    url: `service/all-services?${params.toString()}`,
                     method: "GET",
                 };
             },

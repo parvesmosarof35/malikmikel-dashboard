@@ -50,7 +50,7 @@ export const getImageBaseUrl = () => imgUrl;
 // asdf 
 
 export const getImageUrl = (imagePath: any) => {
-  if (!imagePath) return "";
+  if (!imagePath || typeof imagePath !== 'string') return "";
 
   // If it's already a full URL, return as-is
   if (imagePath.startsWith("http")) {
@@ -61,10 +61,7 @@ export const getImageUrl = (imagePath: any) => {
   const base = imgUrl.replace(/\/+$/, "");
   const path = imagePath.replace(/^\/+/, "");
 
-  const finalUrl = `${base}/${path}`;
-  // console.log("Image URL:", finalUrl);
-
-  return finalUrl;
+  return `${base}/${path}`;
 };
 
 export const zegoConfig = {

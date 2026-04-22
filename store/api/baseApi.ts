@@ -44,5 +44,6 @@ export const baseApi = createApi({
     "discount",
     "Promotion",
     "vendor",
+    "subCategory",
   ],
 });

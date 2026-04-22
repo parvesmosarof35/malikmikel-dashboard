@@ -4,29 +4,29 @@ export const categoryApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         getAllCategories: build.query({
             query: ({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}) => ({
-                url: `/categories/getallcategories?page=${page}&limit=${limit}`,
+                url: `cetagory/all-cetagory?page=${page}&limit=${limit}`,
                 method: "GET",
             }),
             providesTags: ["category"],
         }),
         createCategory: build.mutation({
-            query: (data) => ({
-                url: "/categories/createcategory",
+            query: (formData) => ({
+                url: "cetagory/create-cetagory",
                 method: "POST",
-                body: data,
+                body: formData,
             }),
             invalidatesTags: ["category"],
         }),
         deleteCategory: build.mutation({
             query: (id) => ({
-                url: `/categories/deletecategory/${id}`,
+                url: `cetagory/delete-cetagory/${id}`,
                 method: "DELETE",
             }),
             invalidatesTags: ["category"],
         }),
         updateCategory: build.mutation({
-            query: ({ id, data }) => ({
-                url: `/categories/updatecategory/${id}`,
+            query: ({ id, data }: { id: string; data: FormData }) => ({
+                url: `cetagory/update-cetagory/${id}`,
                 method: "PATCH",
                 body: data,
             }),
@@ -35,4 +35,9 @@ export const categoryApi = baseApi.injectEndpoints({
     }),
 });
 
-export const { useGetAllCategoriesQuery, useCreateCategoryMutation, useDeleteCategoryMutation, useUpdateCategoryMutation } = categoryApi;
+export const {
+    useGetAllCategoriesQuery,
+    useCreateCategoryMutation,
+    useDeleteCategoryMutation,
+    useUpdateCategoryMutation,
+} = categoryApi;

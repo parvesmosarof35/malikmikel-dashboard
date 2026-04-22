@@ -63,6 +63,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { name: "Vendors",         path: "/admin/vendors",         icon: Store },
     { name: "Services",        path: "/admin/services",        icon: Luggage },
     { name: "Category",        path: "/admin/category",        icon: Store },
+    { name: "SubCategory",     path: "/admin/sub-category",    icon: Store },
     { name: "Contents",        path: "/admin/contents",        icon: FileText },
     { name: "Faq",             path: "/admin/faq",             icon: FileText },
     { name: "Report",          path: "/admin/report",          icon: BarChart },
