@@ -47,13 +47,19 @@ import {
     useCreateServiceMutation 
 } from "@/store/api/serviceApi";
 import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
-import { Loader } from "@/components/ui/loader";
+import { Loader as Spinner } from "@/components/ui/loader";
 import { toast } from "sonner";
-import { useJsApiLoader, Autocomplete } from "@react-google-maps/api";
+import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import { getImageUrl } from "@/store/config/envConfig";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyBuSZJklSc1j0D4kqhkJcmyArcZbWujbXQ";
-const libraries: ("places")[] = ["places"];
+// const GOOGLE_MAPS_API_KEY = "AIzaSyBuSZJklSc1j0D4kqhkJcmyArcZbWujbXQ";
+const GOOGLE_MAPS_API_KEY = "AIzaSyCHBKvR2Wgc4eF53nYTlGYxULSQuVpb9t4";
+
+setOptions({
+  key: GOOGLE_MAPS_API_KEY,
+  v: "weekly",
+  libraries: ["places"]
+});
 
 export default function ServicesPage() {
   const { user, isAuthenticated } = useAuth();
@@ -167,7 +173,7 @@ export default function ServicesPage() {
                     {isLoading ? (
                         <TableRow>
                             <TableCell colSpan={7} className="text-center py-24">
-                                <Loader />
+                                <Spinner />
                             </TableCell>
                         </TableRow>
                     ) : services.length === 0 ? (
@@ -299,37 +305,61 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
   const [location, setLocation] = useState({ address: "", lat: "", lng: "" });
   const [hotelName, setHotelName] = useState("");
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
   const { data: categoriesResponse } = useGetAllCategoriesQuery({ limit: 100 });
   const categories = categoriesResponse?.data || [];
-  
   const [createService] = useCreateServiceMutation();
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: libraries
-  });
+  const searchStartTimeRef = useRef<number | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
 
-  const onLoad = (ac: google.maps.places.Autocomplete) => {
-    setAutocomplete(ac);
-  };
+    importLibrary("places").then(() => {
+      const inputElement = document.getElementById("maps-autocomplete-input") as HTMLInputElement;
+      if (!inputElement) return;
 
-  const onPlaceChanged = () => {
-    if (autocomplete !== null) {
-      const place = autocomplete.getPlace();
-      if (place.geometry?.location) {
-        const name = place.name || "";
-        const addr = place.formatted_address || "";
-        const lat = place.geometry.location.lat().toString();
-        const lng = place.geometry.location.lng().toString();
-        setHotelName(name);
-        setLocation({ address: addr, lat, lng });
-      }
+      const autocomplete = new google.maps.places.Autocomplete(inputElement, {
+        types: ["establishment"],
+        fields: ["name", "formatted_address", "geometry"]
+      });
+
+      autocompleteRef.current = autocomplete;
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        const endTime = performance.now();
+        const duration = searchStartTimeRef.current ? (endTime - searchStartTimeRef.current).toFixed(2) : "unknown";
+        
+        console.log("📍 Google Place Selected:");
+        console.log("- Data:", place);
+        console.log("- Time taken (from typing start):", duration, "ms");
+        
+        if (place.geometry?.location) {
+          const name = place.name || "";
+          const addr = place.formatted_address || "";
+          const lat = place.geometry.location.lat().toString();
+          const lng = place.geometry.location.lng().toString();
+          
+          console.log("- Resolved Location:", { name, addr, lat, lng });
+          
+          setHotelName(name);
+          setLocation({ address: addr, lat, lng });
+        }
+        
+        searchStartTimeRef.current = null;
+      });
+    }).catch(e => {
+        console.error("❌ Google Maps Loader Error:", e);
+    });
+  }, [isOpen]);
+
+  const handleSearchInputChange = (e: any) => {
+    if (!searchStartTimeRef.current) {
+        searchStartTimeRef.current = performance.now();
+        console.log("🔍 Search Started...");
     }
+    console.log("✍️ Current Input:", e.target.value);
   };
 
   const handleImageChange = (type: 'main' | 'visitors' | 'menu', e: React.ChangeEvent<HTMLInputElement>) => {
@@ -471,26 +501,13 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                      <Label className="font-bold text-gray-700">Search Address on Map</Label>
                      <div className="relative">
                           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none z-10" />
-                          {isLoaded ? (
-                            <Autocomplete
-                              onLoad={onLoad}
-                              onPlaceChanged={onPlaceChanged}
-                              options={{ types: ["establishment"], fields: ["name", "formatted_address", "geometry"] }}
-                            >
-                              <input 
-                                  id="maps-autocomplete-input"
-                                  type="text"
-                                  placeholder="Start typing hotel or address..."
-                                  className="w-full h-14 rounded-2xl pl-12 pr-4 bg-gray-50 border border-transparent focus:bg-white focus:border-[#2E6F65] focus:outline-none focus:ring-2 focus:ring-[#2E6F65]/20 transition-all text-gray-800 placeholder:text-gray-400"
-                              />
-                            </Autocomplete>
-                          ) : (
-                            <input 
-                                disabled
-                                placeholder="Loading maps..."
-                                className="w-full h-14 rounded-2xl pl-12 pr-4 bg-gray-50 border border-transparent animate-pulse"
-                            />
-                          )}
+                          <input 
+                              id="maps-autocomplete-input"
+                              type="text"
+                              onChange={handleSearchInputChange}
+                              placeholder="Start typing hotel or address..."
+                              className="w-full h-14 rounded-2xl pl-12 pr-4 bg-gray-50 border border-transparent focus:bg-white focus:border-[#2E6F65] focus:outline-none focus:ring-2 focus:ring-[#2E6F65]/20 transition-all text-gray-800 placeholder:text-gray-400"
+                          />
                       </div>
                    </div>
                 </div>

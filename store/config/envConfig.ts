@@ -61,7 +61,10 @@ export const getImageUrl = (imagePath: any) => {
   const base = imgUrl.replace(/\/+$/, "");
   const path = imagePath.replace(/^\/+/, "");
 
-  return `${base}/${path}`;
+  const finalUrl = `${base}/${path}`;
+  console.log(finalUrl, "finalUrl");
+
+  return finalUrl;
 };
 
 export const zegoConfig = {
