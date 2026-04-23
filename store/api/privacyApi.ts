@@ -4,7 +4,7 @@ const privacyApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPrivacy: builder.query({
       query: () => ({
-        url: "legalDoc/create-doc/privacyPolicy",
+        url: "legalDoc/get-doc/privacyPolicy",
         method: "GET",
       }),
       providesTags: ["privacy"],

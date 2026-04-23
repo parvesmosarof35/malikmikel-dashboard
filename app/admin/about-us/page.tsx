@@ -7,32 +7,42 @@ import { toast } from "sonner";
 import { buttonbg } from "@/contexts/theme";
 
 import { Loader } from "@/components/ui/loader";
+import JoditComponent from "../components/JoditComponent";
+
+import { useGetAboutUsQuery, useUpdateAboutUsMutation } from "@/store/api/aboutUsApi";
 
 export default function AboutUsPage() {
+  const { data: apiData, isLoading: isFetching } = useGetAboutUsQuery(undefined);
+  const [updateAboutUs] = useUpdateAboutUsMutation();
+  
   const [content, setContent] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Mock fetching data
-    const timer = setTimeout(() => {
-        setContent("<h1>About Our Company</h1><p>We are dedicated to providing the best service...</p>");
-        setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    if (apiData?.data?.[0]?.description) {
+      setContent(apiData.data[0].description);
+    }
+  }, [apiData]);
 
   const handleSubmit = async () => {
+    if (!content.trim()) {
+      toast.error("Content cannot be empty");
+      return;
+    }
+    
     setIsSubmitting(true);
-    // Mock API call
-    setTimeout(() => {
-        setIsSubmitting(false);
-        toast.success("About Us updated successfully!");
-    }, 1000);
+    try {
+      await updateAboutUs({ description: content }).unwrap();
+      toast.success("About Us updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update About Us");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (isLoading) {
+  if (isFetching) {
       return (
         <div className="flex justify-center items-center h-[50vh]">
             <Loader />
@@ -55,16 +65,10 @@ export default function AboutUsPage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-        {/* Using simple textarea as placeholder for Jodit Editor to avoid large dependency install */}
-        <textarea 
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[400px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y font-mono text-sm"
-            placeholder="Enter rich text content here (HTML supported)..."
+        <JoditComponent
+          content={content}
+          setContent={setContent}
         />
-        <p className="text-xs text-gray-500 mt-2">
-            * Note: Rich Text Editor (Jodit) replaced with Textarea for demo purposes.
-        </p>
       </div>
 
       <div className="text-center pb-10">

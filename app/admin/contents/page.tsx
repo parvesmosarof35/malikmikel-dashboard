@@ -29,11 +29,6 @@ import {
   Edit,
   X,
   HelpCircle,
-  FileText,
-  Shield,
-  Info,
-  Save,
-  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
@@ -44,31 +39,19 @@ import {
   useUpdateFaqMutation,
   useDeleteFaqMutation,
 } from "@/store/api/faqApi";
-import {
-  useGetTermsAndConditionsQuery,
-  useUpdateTermsAndConditionsMutation,
-} from "@/store/api/termsApi";
-import {
-  useGetPrivacyQuery,
-  useUpdatePrivacyMutation,
-} from "@/store/api/privacyApi";
-import {
-  useGetAboutUsQuery,
-  useUpdateAboutUsMutation,
-} from "@/store/api/aboutUsApi";
 
-type View = "faq" | "terms" | "privacy" | "about";
+import React, { Suspense } from "react";
+
+type View = "faq";
 
 const navTabs: { id: View; label: string; icon: React.ReactNode }[] = [
   { id: "faq", label: "FAQ", icon: <HelpCircle className="w-4 h-4" /> },
-  { id: "terms", label: "Terms & Conditions", icon: <FileText className="w-4 h-4" /> },
-  { id: "privacy", label: "Privacy Policy", icon: <Shield className="w-4 h-4" /> },
-  { id: "about", label: "About Us", icon: <Info className="w-4 h-4" /> },
 ];
 
-export default function ContentsPage() {
+function ContentsContent() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  
   const [view, setView] = useState<View>("faq");
 
   useEffect(() => {
@@ -82,7 +65,7 @@ export default function ContentsPage() {
     <div className="min-h-screen bg-transparent p-6 space-y-6">
       {/* Header */}
       <div className={`${buttonbg} rounded-xl p-6 shadow-lg`}>
-        <h1 className="text-2xl font-bold text-white mb-4">Content Management</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">FAQ Management</h1>
         <div className="flex flex-wrap gap-2">
           {navTabs.map((tab) => (
             <button
@@ -104,11 +87,16 @@ export default function ContentsPage() {
       {/* Content */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {view === "faq" && <FaqSection />}
-        {view === "terms" && <TermsSection />}
-        {view === "privacy" && <PrivacySection />}
-        {view === "about" && <AboutSection />}
       </div>
     </div>
+  );
+}
+
+export default function ContentsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><Loader /></div>}>
+      <ContentsContent />
+    </Suspense>
   );
 }
 
@@ -339,153 +327,4 @@ function FaqModal({ item, onClose, onSuccess }: { item: any; onClose: () => void
   );
 }
 
-/* ──────────────────────────────── LEGAL DOC SECTIONS ──────────────────────────────────────── */
 
-/** Shared editor UI — each caller passes its own typed data */
-function LegalEditor({
-  label,
-  icon,
-  hint,
-  description,
-  isLoading,
-  onSave,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  hint: string;
-  description: string;
-  isLoading: boolean;
-  onSave: (content: string) => Promise<void>;
-}) {
-  const [content, setContent] = useState(description);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-
-  // Sync when parent description loads from API
-  useEffect(() => { setContent(description); }, [description]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave(content);
-      toast.success(`${label} updated successfully`);
-    } catch {
-      toast.error(`Failed to update ${label}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <div>
-      <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <span className={textPrimary}>{icon}</span>
-            {label}
-          </h2>
-          <p className="text-gray-400 text-sm mt-0.5">{hint}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-              showPreview
-                ? "bg-[#2E6F65] text-white border-[#2E6F65]"
-                : "border-gray-200 text-gray-600 hover:border-[#2E6F65] hover:text-[#2E6F65]"
-            }`}
-          >
-            {showPreview ? "Edit" : "Preview"}
-          </button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || isLoading}
-            className={`${buttonbg} gap-2 font-semibold flex items-center justify-center`}
-          >
-            {isSaving ? (
-              <>
-                <Loader className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      <div className="p-6">
-        {isLoading ? (
-          <div className="flex justify-center py-20"><Loader /></div>
-        ) : showPreview ? (
-          <div
-            className="prose max-w-none min-h-[400px] p-6 bg-gray-50 rounded-2xl border border-gray-100 text-gray-700 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: content || "<p class='text-gray-400'>Nothing to preview yet.</p>" }}
-          />
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-              <ChevronRight className="w-3 h-3" />
-              HTML editor — supports &lt;h2&gt;, &lt;h3&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;, &lt;li&gt;, etc.
-            </div>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={`<h2>${label}</h2>\n<p>Write your content here...</p>`}
-              className="min-h-[420px] rounded-2xl font-mono text-sm border-gray-200 focus:border-[#2E6F65] focus:ring-[#2E6F65]/20 resize-y"
-            />
-            <p className="text-xs text-gray-400 text-right">{content.length} characters</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TermsSection() {
-  const { data, isLoading } = useGetTermsAndConditionsQuery(undefined);
-  const [updateTerms] = useUpdateTermsAndConditionsMutation();
-  return (
-    <LegalEditor
-      label="Terms & Conditions"
-      icon={<FileText className="w-5 h-5" />}
-      hint="Write your Terms & Conditions using HTML tags for formatting."
-      description={data?.data?.description || ""}
-      isLoading={isLoading}
-      onSave={(content) => updateTerms({ description: content }).unwrap()}
-    />
-  );
-}
-
-function PrivacySection() {
-  const { data, isLoading } = useGetPrivacyQuery(undefined);
-  const [updatePrivacy] = useUpdatePrivacyMutation();
-  return (
-    <LegalEditor
-      label="Privacy Policy"
-      icon={<Shield className="w-5 h-5" />}
-      hint="Write your Privacy Policy. You can use HTML for rich formatting."
-      description={data?.data?.description || ""}
-      isLoading={isLoading}
-      onSave={(content) => updatePrivacy({ description: content }).unwrap()}
-    />
-  );
-}
-
-function AboutSection() {
-  const { data, isLoading } = useGetAboutUsQuery(undefined);
-  const [updateAboutUs] = useUpdateAboutUsMutation();
-  return (
-    <LegalEditor
-      label="About Us"
-      icon={<Info className="w-5 h-5" />}
-      hint="Describe your company, mission, and values."
-      description={data?.data?.description || ""}
-      isLoading={isLoading}
-      onSave={(content) => updateAboutUs({ description: content }).unwrap()}
-    />
-  );
-}

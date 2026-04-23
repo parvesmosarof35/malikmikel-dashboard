@@ -47,7 +47,7 @@ export const serviceApi = baseApi.injectEndpoints({
         // Update service
         updateService: builder.mutation({
             query: ({ id, formData }) => ({
-                url: `services/updateservice/${id}`,
+                url: `service/update-service/${id}`,
                 method: "PATCH",
                 body: formData, // FormData
             }),
@@ -57,7 +57,7 @@ export const serviceApi = baseApi.injectEndpoints({
         // Delete service
         deleteService: builder.mutation({
             query: (id) => ({
-                url: `services/deleteservice/${id}`,
+                url: `service/delete-service/${id}`,
                 method: "DELETE",
             }),
             invalidatesTags: ["service"],

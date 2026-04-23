@@ -7,32 +7,42 @@ import { toast } from "sonner";
 import { buttonbg } from "@/contexts/theme";
 
 import { Loader } from "@/components/ui/loader";
+import JoditComponent from "../components/JoditComponent";
+
+import { useGetPrivacyQuery, useUpdatePrivacyMutation } from "@/store/api/privacyApi";
 
 export default function PrivacyPolicyPage() {
+  const { data: apiData, isLoading: isFetching } = useGetPrivacyQuery(undefined);
+  const [updatePrivacy] = useUpdatePrivacyMutation();
+  
   const [content, setContent] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Mock fetching data
-    const timer = setTimeout(() => {
-        setContent("<h1>Privacy Policy</h1><p>Your privacy is important to us...</p>");
-        setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    if (apiData?.data?.[0]?.description) {
+      setContent(apiData.data[0].description);
+    }
+  }, [apiData]);
 
   const handleSubmit = async () => {
+    if (!content.trim()) {
+      toast.error("Content cannot be empty");
+      return;
+    }
+    
     setIsSubmitting(true);
-    // Mock API call
-    setTimeout(() => {
-        setIsSubmitting(false);
-        toast.success("Privacy Policy updated successfully!");
-    }, 1000);
+    try {
+      await updatePrivacy({ description: content }).unwrap();
+      toast.success("Privacy Policy updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update Privacy Policy");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (isLoading) {
+  if (isFetching) {
       return (
         <div className="flex justify-center items-center h-[50vh]">
             <Loader />
@@ -55,11 +65,9 @@ export default function PrivacyPolicyPage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-        <textarea 
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[400px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y font-mono text-sm"
-            placeholder="Enter privacy policy content here..."
+        <JoditComponent
+          content={content}
+          setContent={setContent}
         />
       </div>
 

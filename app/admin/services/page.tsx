@@ -47,7 +47,7 @@ import {
     useCreateServiceMutation 
 } from "@/store/api/serviceApi";
 import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
-import { Loader, Loader as Spinner } from "@/components/ui/loader";
+import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import { getImageUrl } from "@/store/config/envConfig";
@@ -173,7 +173,7 @@ export default function ServicesPage() {
                     {isLoading ? (
                         <TableRow>
                             <TableCell colSpan={7} className="text-center py-24">
-                                <Spinner />
+                                <Loader />
                             </TableCell>
                         </TableRow>
                     ) : services.length === 0 ? (

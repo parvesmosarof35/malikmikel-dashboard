@@ -4,7 +4,7 @@ const aboutUsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAboutUs: builder.query({
       query: () => ({
-        url: "legalDoc/create-doc/aboutUs",
+        url: "legalDoc/get-doc/aboutUs",
         method: "GET",
       }),
       providesTags: ["aboutUs"],

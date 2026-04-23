@@ -4,7 +4,7 @@ const termsAndConditionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTermsAndConditions: builder.query({
       query: () => ({
-        url: "legalDoc/create-doc/termsAndCondition",
+        url: "legalDoc/get-doc/termsAndCondition",
         method: "GET",
       }),
       providesTags: ["termsAndConditions"],
