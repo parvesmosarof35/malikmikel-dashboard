@@ -53,7 +53,9 @@ import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import { getImageUrl } from "@/store/config/envConfig";
 
 // const GOOGLE_MAPS_API_KEY = "AIzaSyBuSZJklSc1j0D4kqhkJcmyArcZbWujbXQ";
-const GOOGLE_MAPS_API_KEY = "AIzaSyCHBKvR2Wgc4eF53nYTlGYxULSQuVpb9t4";
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+console.log(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, "google map key now asdf");
 
 setOptions({
   key: GOOGLE_MAPS_API_KEY,

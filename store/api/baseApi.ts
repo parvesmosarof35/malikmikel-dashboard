@@ -45,5 +45,8 @@ export const baseApi = createApi({
     "Promotion",
     "vendor",
     "subCategory",
+    "badge",
+    "report",
+    "admin",
   ],
 });

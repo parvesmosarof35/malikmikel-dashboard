@@ -11,8 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { activeTabClass, buttonbg } from "@/contexts/theme";
-import { useGetSingleAdminQuery, useChangePasswordAdminMutation } from "@/store/api/adminApi";
-import { useUpdateProfileMutation } from "@/store/api/userApi";
+import { 
+  useGetSingleAdminQuery, 
+  useChangePasswordAdminMutation, 
+  useUpdateAdminPersonalInfoMutation 
+} from "@/store/api/adminApi";
 import { getImageUrl } from "@/store/config/envConfig";
 
 export default function ProfilePage() {
@@ -84,7 +87,7 @@ import { Loader } from "@/components/ui/loader";
 // --- Sub-components (Forms) ---
 
 function EditProfileForm({ adminData, refetch }: { adminData: any, refetch: () => void }) {
-  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const [updateProfile, { isLoading }] = useUpdateAdminPersonalInfoMutation();
   // ... rest of the component state ...
   const [formData, setFormData] = useState({
     userName: "",

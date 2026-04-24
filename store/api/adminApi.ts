@@ -2,23 +2,54 @@ import { baseApi } from "./baseApi";
 
 export const adminApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
-        // Create user
+        // Create a new admin
         createAdmin: builder.mutation({
-            query: (userData) => ({
-                url: "user/create_user",
+            query: (formData) => ({
+                url: "admin/create-admin",
                 method: "POST",
-                body: userData, // expects JSON
+                body: formData,
             }),
-            invalidatesTags: ["admin", "dashboard"],
+            invalidatesTags: ["admin"],
         }),
-        // Admin login
+
+        // Get all admins
+        getAllAdmins: builder.query({
+            query: (params) => ({
+                url: "admin/all-admins",
+                method: "GET",
+                params,
+            }),
+            providesTags: ["admin"],
+        }),
+
+        // Delete an admin
+        deleteAdmin: builder.mutation({
+            query: (id) => ({
+                url: `admin/delete-admin/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["admin"],
+        }),
+
+        // Get single admin
+        getSingleAdmin: builder.query({
+            query: (id) => ({
+                url: `admin/single-admin/${id}`,
+                method: "GET",
+            }),
+            providesTags: ["admin"],
+        }),
+
+        // Admin Login
         adminLogin: builder.mutation({
-            query: (credentials) => ({
+            query: (data) => ({
                 url: "admin/admin-login",
                 method: "POST",
-                body: credentials,
+                body: data,
             }),
+            invalidatesTags: ["admin"],
         }),
+
         // Forgot Password Admin
         forgotPasswordAdmin: builder.mutation({
             query: (data) => ({
@@ -27,14 +58,16 @@ export const adminApi = baseApi.injectEndpoints({
                 body: data,
             }),
         }),
+
         // Verify OTP Admin
         verifyOtpAdmin: builder.mutation({
             query: (data) => ({
-                url: "admin/otp-verify",
+                url: "admin/verify-otp",
                 method: "POST",
                 body: data,
             }),
         }),
+
         // Reset Password Admin
         resetPasswordAdmin: builder.mutation({
             query: (data) => ({
@@ -42,76 +75,42 @@ export const adminApi = baseApi.injectEndpoints({
                 method: "POST",
                 body: data,
             }),
-        }),
-        // Get single admin
-        getSingleAdmin: builder.query({
-            query: (id) => `admin/single-admin/${id}`,
-            providesTags: ["admin"],
-        }),
-        // Update admin
-        updateAdmin: builder.mutation({
-            query: (data) => ({
-                url: `admin/update-admin-personal-info`,
-                method: "PATCH",
-                body: data, // FormData for image upload
-            }),
             invalidatesTags: ["admin"],
         }),
-        // Change password admin
+
+        // Change admin password
         changePasswordAdmin: builder.mutation({
             query: (data) => ({
                 url: "admin/change-password",
-                method: "PUT",
+                method: "PATCH",
                 body: data,
             }),
+            invalidatesTags: ["admin"],
         }),
-        // Get all admins with pagination
-        getAllAdmins: builder.query({
-            query: ({ limit = 10, page = 1 }: any = {}) =>
-                `auth/find_by_all_admin?limit=${limit}&page=${page}`,
-            providesTags: ["admin"],
-        }),
-        // Delete admin
-        deleteAdmin: builder.mutation({
-            query: (id) => ({
-                url: `user/delete_user/${id}`,
-                method: "DELETE",
+
+        // Update admin info (self or general)
+        updateAdminPersonalInfo: builder.mutation({
+            query: (formData) => ({
+                url: "admin/update-admin-personal-info",
+                method: "PATCH",
+                body: formData,
             }),
-            invalidatesTags: ["admin", "dashboard"],
-        }),
-        // Get all consultants
-        getAllConsultants: builder.query({
-            query: ({ limit = 10, page = 1 }: any = {}) =>
-                `user/getallconsult?limit=${limit}&page=${page}`,
-            providesTags: ["admin"],
-        }),
-        // Get all bookings
-        getAllBookings: builder.query({
-            query: ({ page = 1, limit = 10, consultantid = "", status = "" }: any = {}) => {
-                const params = new URLSearchParams();
-                if (page) params.append("page", page.toString());
-                if (limit) params.append("limit", limit.toString());
-                if (consultantid) params.append("consultantid", consultantid);
-                if (status) params.append("status", status);
-                return `bookings/get_all_booked_data_for_admin?${params.toString()}`;
-            },
-            providesTags: ["admin"],
+            invalidatesTags: ["admin"],
         }),
     }),
 });
+
 export const {
     useCreateAdminMutation,
+    useGetAllAdminsQuery,
+    useDeleteAdminMutation,
+    useGetSingleAdminQuery,
     useAdminLoginMutation,
     useForgotPasswordAdminMutation,
     useVerifyOtpAdminMutation,
     useResetPasswordAdminMutation,
-    useGetSingleAdminQuery,
-    useUpdateAdminMutation,
     useChangePasswordAdminMutation,
-    useGetAllAdminsQuery,
-    useDeleteAdminMutation,
-    useGetAllConsultantsQuery,
-    useGetAllBookingsQuery,
+    useUpdateAdminPersonalInfoMutation,
 } = adminApi;
 
 export default adminApi;

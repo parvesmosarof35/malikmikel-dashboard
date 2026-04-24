@@ -1,0 +1,504 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Trash2, 
+  Edit, 
+  Plus, 
+  X,
+  GripVertical,
+  Award,
+  Image as ImageIcon
+} from "lucide-react";
+import Image from "next/image";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { buttonbg, textPrimary } from "@/contexts/theme";
+import { 
+  useGetAllBadgesQuery, 
+  useDeleteBadgeMutation, 
+  useCreateBadgeMutation,
+  useAddCriteriaMutation
+} from "@/store/api/badgeApi";
+import { Loader } from "@/components/ui/loader";
+import { toast } from "sonner";
+import { getImageUrl } from "@/store/config/envConfig";
+
+export default function BadgesPage() {
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
+  const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
+  
+  const { data: badgesResponse, isLoading, refetch } = useGetAllBadgesQuery({ page: currentPage, limit: 10 });
+  const [deleteBadge] = useDeleteBadgeMutation();
+  const [createBadge] = useCreateBadgeMutation();
+  const [addCriteria] = useAddCriteriaMutation();
+
+  const badges = badgesResponse?.badges || [];
+  const meta = badgesResponse?.meta || { totalPage: 1, total: 0 };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/auth");
+    } else if (user?.role !== "admin") {
+      router.push("/");
+    }
+  }, [isAuthenticated, user, router]);
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this badge?")) {
+        try {
+            await deleteBadge(id).unwrap();
+            toast.success("Badge deleted successfully");
+            refetch();
+        } catch (error) {
+            toast.error("Failed to delete badge");
+        }
+    }
+  };
+
+  if (!user || user.role !== "admin") return null;
+
+  return (
+    <div className="min-h-screen bg-transparent p-6 space-y-6">
+      
+      {/* Header */}
+      <div className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}>
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full md:w-auto">
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Award className="w-8 h-8" />
+                  Badge Management
+              </h1>
+          </div>
+          
+          <Button 
+            onClick={() => setIsAddModalOpen(true)} 
+            className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold w-full md:w-auto"
+          >
+              <Plus className="w-5 h-5 mr-1" /> Add New Badge
+          </Button>
+      </div>
+
+      {/* Content Area */}
+      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between">
+             <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader className="bg-white">
+                        <TableRow className="border-b border-[#2E6F65] hover:bg-transparent">
+                            <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-6`}>#</TableHead>
+                            <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Icon</TableHead>
+                            <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Title</TableHead>
+                            <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Criteria</TableHead>
+                            <TableHead className={`font-semibold text-base py-5 ${textPrimary} text-right pr-6`}>Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-20">
+                                    <Loader />
+                                </TableCell>
+                            </TableRow>
+                        ) : badges.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-20 text-gray-500">
+                                    No badges found
+                                </TableCell>
+                            </TableRow>
+                        ) : badges.map((badge: any, i: number) => (
+                            <TableRow key={badge._id || i} className="hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                                <TableCell className="font-medium text-gray-600 py-4 pl-6">
+                                    {((currentPage - 1) * 10 + i + 1).toString().padStart(2, '0')}
+                                </TableCell>
+                                <TableCell className="py-4">
+                                    <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100">
+                                        <Image 
+                                            src={getImageUrl(badge.icon)} 
+                                            alt={badge.title} 
+                                            fill 
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-gray-900 font-bold py-4">{badge.title}</TableCell>
+                                <TableCell className="text-gray-600 py-4 max-w-[300px] truncate">
+                                    {badge.criteriaList?.length > 0 
+                                        ? badge.criteriaList.map((c: any) => c.text).join(", ") 
+                                        : "No criteria defined"}
+                                </TableCell>
+                                <TableCell className="py-4 pr-6">
+                                    <div className="flex items-center justify-end gap-3">
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedBadgeId(badge._id);
+                                                setIsCriteriaModalOpen(true);
+                                            }}
+                                            className="text-[#2E6F65] hover:text-[#2E6F65]/80 transition-colors flex items-center gap-1 text-sm font-semibold border border-[#2E6F65]/20 px-3 py-1.5 rounded-lg hover:bg-[#2E6F65]/5"
+                                        >
+                                            <Plus className="w-4 h-4" /> Criteria
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(badge._id)}
+                                            className="text-red-500 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+             </div>
+             
+             {/* Pagination */}
+              <div className="p-4 border-t border-gray-100">
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <PaginationPrevious className="hover:bg-transparent p-0 h-auto" />
+                            </button>
+                        </PaginationItem>
+                        
+                        {Array.from({ length: meta.totalPage || 1 }, (_, i) => i + 1).map((page) => (
+                            <PaginationItem key={page}>
+                                <button 
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-lg border-0 transition-colors ${
+                                        currentPage === page 
+                                        ? "bg-[#2E6F65] text-white" 
+                                        : "text-gray-600 hover:text-[#2E6F65] hover:bg-gray-100"
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            </PaginationItem>
+                        ))}
+
+                        <PaginationItem>
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.min(meta.totalPage || 1, prev + 1))}
+                                disabled={currentPage === (meta.totalPage || 1)}
+                                className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <PaginationNext className="hover:bg-transparent p-0 h-auto" />
+                            </button>
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+              </div>
+      </div>
+
+       {/* Add Badge Modal */}
+       <AddBadgeModal 
+          isOpen={isAddModalOpen} 
+          onClose={() => setIsAddModalOpen(false)} 
+          onSubmit={async (formData) => {
+             try {
+                await createBadge(formData).unwrap();
+                toast.success("Badge created successfully");
+                setIsAddModalOpen(false);
+                refetch();
+             } catch (error) {
+                toast.error("Failed to create badge");
+             }
+          }}
+       />
+
+       {/* Add Criteria Modal */}
+       <AddCriteriaModal 
+          isOpen={isCriteriaModalOpen}
+          badgeId={selectedBadgeId}
+          onClose={() => {
+              setIsCriteriaModalOpen(false);
+              setSelectedBadgeId(null);
+          }}
+          onSubmit={async (badgeId, formData) => {
+              try {
+                  await addCriteria({ id: badgeId, formData }).unwrap();
+                  toast.success("Criteria added successfully");
+                  setIsCriteriaModalOpen(false);
+                  setSelectedBadgeId(null);
+                  refetch();
+              } catch (error) {
+                  toast.error("Failed to add criteria");
+              }
+          }}
+       />
+
+    </div>
+  );
+}
+
+// Add Badge Modal Component
+const AddBadgeModal = ({ isOpen, onClose, onSubmit }: { isOpen: boolean; onClose: () => void; onSubmit: (data: FormData) => Promise<void> }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [showNote, setShowNote] = useState(true);
+  
+  const [criteria, setCriteria] = useState<{ text: string; icon: string }[]>([
+    { text: "Minimum 4.5 rating", icon: "optional_path" }
+  ]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
+    
+    // Add criteriaList as stringified JSON
+    formData.append("criteriaList", JSON.stringify(criteria));
+    
+    await onSubmit(formData);
+    setIsLoading(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setPreview(reader.result as string);
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const addCriteriaItem = () => {
+      setCriteria([...criteria, { text: "", icon: "optional_path" }]);
+  };
+
+  const updateCriteriaText = (index: number, text: string) => {
+      const newCriteria = [...criteria];
+      newCriteria[index].text = text;
+      setCriteria(newCriteria);
+  };
+
+  const removeCriteriaItem = (index: number) => {
+      setCriteria(criteria.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+        <div className="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+           <h2 className="text-xl font-bold text-[#2E6F65]">Create New Badge</h2>
+           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
+               <X className="w-5 h-5" />
+           </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
+           <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-start">
+                  <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="title" className="font-bold text-gray-700">Badge Title</Label>
+                        <Input id="title" name="title" required placeholder="e.g. Top Rated" className="h-11 rounded-xl" />
+                      </div>
+                      
+                      <div className="flex items-center gap-6 pt-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-600">Enable Modal</span>
+                            <Switch name="isModalEnabled" defaultChecked className="data-[state=checked]:bg-[#2E6F65]" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-600">Show Note</span>
+                            <Switch checked={showNote} onCheckedChange={setShowNote} name="showNote" className="data-[state=checked]:bg-[#2E6F65]" />
+                        </div>
+                      </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Badge Icon</Label>
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-20 h-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden group hover:border-[#2E6F65]/50 transition-colors cursor-pointer">
+                            {preview ? (
+                                <Image src={preview} alt="preview" fill className="object-cover" />
+                            ) : (
+                                <ImageIcon className="text-gray-300 w-10 h-10 group-hover:text-[#2E6F65]/50 transition-colors" />
+                            )}
+                            <input 
+                                type="file" 
+                                name="icon" 
+                                accept="image/*" 
+                                onChange={handleImageChange}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                required
+                            />
+                        </div>
+                        <p className="text-[10px] text-gray-400 font-medium">PNG, JPG up to 5MB</p>
+                    </div>
+                  </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="introDescription" className="font-bold text-gray-700">Intro Description</Label>
+                <Textarea id="introDescription" name="introDescription" required placeholder="Describe what this badge means..." className="min-h-[100px] rounded-xl resize-none" />
+              </div>
+
+              {showNote && (
+                  <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
+                    <Label htmlFor="footerReassuranceText" className="font-bold text-gray-700">Footer Reassurance Text</Label>
+                    <Textarea id="footerReassuranceText" name="footerReassuranceText" placeholder="e.g. Verified by Malik." className="min-h-[80px] rounded-xl resize-none" />
+                  </div>
+              )}
+
+              <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-gray-800">Badge Criteria</h3>
+                    <Button 
+                        type="button"
+                        onClick={addCriteriaItem}
+                        variant="outline" 
+                        className="text-[#2E6F65] bg-green-50 border-green-100 hover:bg-green-100 gap-1 h-9 rounded-xl font-bold"
+                    >
+                        <Plus className="w-4 h-4" /> Add Item
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {criteria.map((item, index) => (
+                        <div key={index} className="flex items-center gap-3 animate-in slide-in-from-left-2 duration-200">
+                            <GripVertical className="text-gray-300 w-5 h-5 shrink-0" />
+                            <Input 
+                                value={item.text} 
+                                onChange={(e) => updateCriteriaText(index, e.target.value)}
+                                placeholder="Criteria text..." 
+                                className="flex-1 h-11 rounded-xl"
+                                required
+                            />
+                            <button 
+                                type="button"
+                                onClick={() => removeCriteriaItem(index)}
+                                className="text-red-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-full transition-colors shrink-0"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        </div>
+                    ))}
+                  </div>
+              </div>
+           </div>
+           
+           <div className="pt-4 flex gap-3 sticky bottom-0 bg-white">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl font-bold border-gray-200">Cancel</Button>
+              <Button type="submit" disabled={isLoading} className={`flex-1 h-12 rounded-xl font-bold ${buttonbg} shadow-lg shadow-[#2E6F65]/20`}>
+                {isLoading ? (
+                    <div className="flex items-center gap-2">
+                        <Loader className="w-4 h-4 animate-spin text-white" />
+                        Creating...
+                    </div>
+                ) : "Create Badge"}
+              </Button>
+           </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Add Criteria Modal Component (Specifically for adding to existing badge)
+const AddCriteriaModal = ({ isOpen, badgeId, onClose, onSubmit }: { isOpen: boolean; badgeId: string | null; onClose: () => void; onSubmit: (id: string, data: FormData) => Promise<void> }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    if (!isOpen || !badgeId) return null;
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const formData = new FormData(e.currentTarget);
+        await onSubmit(badgeId, formData);
+        setIsLoading(false);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+                <div className="p-6 border-b flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-[#2E6F65]">Add New Criteria</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    <div className="space-y-2">
+                        <Label htmlFor="text" className="font-bold text-gray-700">Criteria Description</Label>
+                        <Input id="text" name="text" required placeholder="e.g. Background checked" className="h-12 rounded-xl" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <Label className="font-bold text-gray-700">Criteria Icon (Optional)</Label>
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-gray-50 rounded-xl border border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden group hover:border-[#2E6F65]/50 transition-colors cursor-pointer">
+                                {preview ? (
+                                    <Image src={preview} alt="preview" fill className="object-cover" />
+                                ) : (
+                                    <ImageIcon className="text-gray-300 w-8 h-8 group-hover:text-[#2E6F65]/50 transition-colors" />
+                                )}
+                                <input 
+                                    type="file" 
+                                    name="icon" 
+                                    accept="image/*" 
+                                    onChange={handleImageChange}
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                                    Upload an icon to visually represent this criteria point.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 flex gap-3">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl font-bold">Cancel</Button>
+                        <Button type="submit" disabled={isLoading} className={`flex-1 h-12 rounded-xl font-bold ${buttonbg}`}>
+                            {isLoading ? "Adding..." : "Add Criteria"}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};

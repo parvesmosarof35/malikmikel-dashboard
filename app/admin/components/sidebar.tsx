@@ -19,6 +19,7 @@ import {
     Luggage,
     MessageSquare,
     HelpCircle,
+    Award,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -62,10 +63,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { name: "Dashboard",       path: "/admin/dashboard",       icon: LayoutDashboard },
     { name: "Users",           path: "/admin/users",           icon: Users },
     { name: "Vendors",         path: "/admin/vendors",         icon: Store },
+    { name: "Badges",         path: "/admin/badges",         icon: Award },
     { name: "Services",        path: "/admin/services",        icon: Luggage },
     { name: "Category",        path: "/admin/category",        icon: Store },
     { name: "SubCategory",     path: "/admin/sub-category",    icon: Store },
-    { name: "Faq",             path: "/admin/contents",        icon: HelpCircle },
+    { name: "Faq",             path: "/admin/faq",             icon: HelpCircle },
     { name: "Report",          path: "/admin/report",          icon: BarChart },
     { name: "Create Admin",    path: "/admin/create-admin",    icon: ShieldCheck },
     { name: "Settings",        path: "/admin/settings",        icon: Settings },
