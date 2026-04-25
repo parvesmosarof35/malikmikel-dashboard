@@ -37,7 +37,7 @@ export const serviceApi = baseApi.injectEndpoints({
         // Create service
         createService: builder.mutation({
             query: (formData) => ({
-                url: "services/createService",
+                url: "service/create-service",
                 method: "POST",
                 body: formData, // FormData
             }),

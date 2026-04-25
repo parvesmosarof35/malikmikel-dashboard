@@ -27,7 +27,8 @@ import {
   Search,
   Upload,
   Calendar,
-  Tag
+  Tag,
+  Eye
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -44,9 +45,11 @@ import { buttonbg, textPrimary, borderPrimary } from "@/contexts/theme";
 import { 
     useGetAllServicesQuery, 
     useDeleteServiceMutation, 
-    useCreateServiceMutation 
+    useCreateServiceMutation,
+    useUpdateServiceMutation
 } from "@/store/api/serviceApi";
 import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
+import { useGetAllSubCategoriesQuery } from "@/store/api/subCategoryApi";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
@@ -71,6 +74,11 @@ export default function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<any>(null);
+  const [serviceToEdit, setServiceToEdit] = useState<any>(null);
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   
   const { data: servicesResponse, isLoading, refetch } = useGetAllServicesQuery({ 
@@ -95,14 +103,18 @@ export default function ServicesPage() {
   }, [isAuthenticated, user, router]);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this service?")) {
-      try {
-        await deleteService(id).unwrap();
-        toast.success("Service deleted successfully");
-        refetch();
-      } catch (error) {
-        toast.error("Failed to delete service");
-      }
+    try {
+      const promise = deleteService(id).unwrap();
+      toast.promise(promise, {
+        loading: 'Deleting service...',
+        success: 'Service deleted successfully!',
+        error: 'Failed to delete service'
+      });
+      await promise;
+      refetch();
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -148,7 +160,7 @@ export default function ServicesPage() {
           </div>
           
           <Button 
-            onClick={() => setIsAddModalOpen(true)} 
+            onClick={() => { setServiceToEdit(null); setIsAddModalOpen(true); }} 
             className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold px-6 py-6 rounded-xl shadow-md transition-all active:scale-95 group"
           >
               <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
@@ -218,13 +230,30 @@ export default function ServicesPage() {
                             <TableCell className="py-4 pr-6 text-right">
                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
+                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                        title="View Details"
+                                        onClick={() => {
+                                            setSelectedService(service);
+                                            setIsViewModalOpen(true);
+                                        }}
+                                    >
+                                        <Eye className="w-5 h-5" />
+                                    </button>
+                                    <button 
                                         className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="Edit"
+                                        onClick={() => {
+                                            setServiceToEdit(service);
+                                            setIsAddModalOpen(true);
+                                        }}
                                     >
                                         <Edit className="w-5 h-5" />
                                     </button>
                                     <button 
-                                        onClick={() => handleDelete(service._id)}
+                                        onClick={() => {
+                                            setServiceToDelete(service);
+                                            setIsDeleteModalOpen(true);
+                                        }}
                                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                         title="Delete"
                                     >
@@ -289,14 +318,183 @@ export default function ServicesPage() {
             setIsAddModalOpen(false);
             refetch();
         }}
+        serviceToEdit={serviceToEdit}
+      />
+
+      {/* View Service Modal */}
+      <ViewServiceModal 
+        isOpen={isViewModalOpen} 
+        onClose={() => setIsViewModalOpen(false)} 
+        service={selectedService}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => handleDelete(serviceToDelete?._id)}
+        serviceName={serviceToDelete?.name}
       />
 
     </div>
   );
 }
 
+// Delete Confirmation Modal
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, serviceName }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; serviceName?: string }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+            <Trash2 className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Delete Service?</h2>
+          <p className="text-gray-500 text-sm">
+            Are you sure you want to delete <span className="font-bold text-gray-800">{serviceName || "this service"}</span>? This action cannot be undone and will permanently remove all associated data.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 mt-8">
+          <Button onClick={onClose} variant="outline" className="flex-1 rounded-xl h-12 font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} className="flex-1 rounded-xl h-12 font-bold bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/20 transition-all">
+            Yes, Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// View Service Modal Component
+const ViewServiceModal = ({ isOpen, onClose, service }: { isOpen: boolean; onClose: () => void; service: any }) => {
+  if (!isOpen || !service) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 md:p-8 animate-in fade-in duration-300">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
+        <div className="p-6 border-b flex justify-between items-center bg-gray-50/80 sticky top-0 z-20">
+           <div>
+               <h2 className="text-2xl font-black text-[#2E6F65] tracking-tight">{service.name}</h2>
+               <p className="text-sm text-gray-500 mt-1 font-medium">{service.cetagory?.name} {service.subCetagory?.name ? `• ${service.subCetagory?.name}` : ''}</p>
+           </div>
+           <button 
+                onClick={onClose} 
+                className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100 text-gray-400 hover:text-gray-600 hover:shadow-md transition-all active:scale-90"
+            >
+                <X className="w-5 h-5" />
+            </button>
+        </div>
+        
+        <div className="p-6 overflow-y-auto space-y-8 bg-white">
+            {/* Image */}
+            <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-md border border-gray-100">
+                <Image src={getImageUrl(service.image) || "/placeholder.png"} alt={service.name} fill className="object-cover" />
+            </div>
+
+            {/* Basic Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2"><Tag className="w-4 h-4 text-[#2E6F65]" /> About</h3>
+                        <p className="text-gray-600 text-sm leading-relaxed">{service.description}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-500" /> Details</h3>
+                        <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <p className="flex items-start gap-3 text-sm text-gray-700">
+                                <MapPin className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+                                <span>{service.address}</span>
+                            </p>
+                            <p className="flex items-center gap-3 text-sm text-gray-700">
+                                <Clock className="w-5 h-5 text-gray-400 shrink-0" />
+                                <span>{service.openTime || "N/A"} - {service.closeTime || "N/A"}</span>
+                            </p>
+                            <p className="flex items-center gap-3 text-sm text-gray-700">
+                                <Star className="w-5 h-5 text-yellow-500 fill-current shrink-0" />
+                                <span><span className="font-bold text-gray-900">{service.averageRating?.toFixed(1) || "0.0"}</span> ({service.totalReviews || 0} reviews)</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    {service.photoOfVisitor?.length > 0 && (
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2"><ImageIcon className="w-4 h-4 text-purple-500" /> Gallery</h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                {service.photoOfVisitor.map((photo: string, idx: number) => (
+                                    <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-gray-100 hover:scale-105 transition-transform shadow-sm">
+                                        <Image src={getImageUrl(photo)} alt="Gallery" fill className="object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {service.hotelMenu?.length > 0 && (
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-3 mt-4 flex items-center gap-2"><ImageIcon className="w-4 h-4 text-orange-500" /> Menu</h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                {service.hotelMenu.map((photo: string, idx: number) => (
+                                    <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-gray-100 hover:scale-105 transition-transform shadow-sm">
+                                        <Image src={getImageUrl(photo)} alt="Menu" fill className="object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+            {/* Reviews */}
+            {service.reviews?.length > 0 && (
+                <div className="pt-4">
+                    <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-500 fill-current" /> Top Reviews from Maps</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {service.reviews.map((revStr: string, idx: number) => {
+                            try {
+                                const revArray = typeof revStr === 'string' ? JSON.parse(revStr) : revStr;
+                                const arrayToMap = Array.isArray(revArray) ? revArray : [revArray];
+                                
+                                return arrayToMap.map((review: any, rIdx: number) => (
+                                    <div key={`${idx}-${rIdx}`} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col gap-3 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            {review.profile_photo_url ? (
+                                                <Image src={review.profile_photo_url} alt={review.author_name} width={40} height={40} className="rounded-full shadow-sm" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-500 shadow-sm">
+                                                    {review.author_name?.charAt(0)}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="font-bold text-sm text-gray-800 line-clamp-1">{review.author_name}</p>
+                                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                                                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                                                    <span className="font-bold">{review.rating}</span> • <span className="truncate max-w-[120px]">{review.relative_time_description}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-gray-600 line-clamp-3 italic">"{review.text}"</p>
+                                    </div>
+                                ));
+                            } catch(e) { return null; }
+                        })}
+                    </div>
+                </div>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Add Service Modal Component
-const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) => {
+const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; serviceToEdit?: any }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [previews, setPreviews] = useState<{
     main: string | null;
@@ -306,10 +504,64 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
 
   const [location, setLocation] = useState({ address: "", lat: "", lng: "" });
   const [hotelName, setHotelName] = useState("");
+  const [operatingHours, setOperatingHours] = useState({ open: "", close: "" });
+  const [placeData, setPlaceData] = useState<{ rating: number; totalReviews: number; reviews: any[] }>({
+    rating: 0,
+    totalReviews: 0,
+    reviews: []
+  });
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const { data: categoriesResponse } = useGetAllCategoriesQuery({ limit: 100 });
   const categories = categoriesResponse?.data || [];
+  
+  const { data: subCategoriesResponse } = useGetAllSubCategoriesQuery(
+    { category: selectedCategoryName, limit: 100 }, 
+    { skip: !selectedCategoryName }
+  );
+  const subCategories = subCategoriesResponse?.data || [];
+  
   const [createService] = useCreateServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
+
+  useEffect(() => {
+    if (isOpen) {
+      if (serviceToEdit) {
+        setHotelName(serviceToEdit.name || "");
+        setLocation({
+          address: serviceToEdit.address || "",
+          lat: serviceToEdit.latitude || "",
+          lng: serviceToEdit.longitude || ""
+        });
+        setOperatingHours({
+          open: serviceToEdit.openTime || "",
+          close: serviceToEdit.closeTime || ""
+        });
+        setPlaceData({
+          rating: serviceToEdit.averageRating || 0,
+          totalReviews: serviceToEdit.totalReviews || 0,
+          reviews: serviceToEdit.reviews || []
+        });
+        setSelectedCategoryId(serviceToEdit.cetagory?._id || "");
+        setSelectedCategoryName(serviceToEdit.cetagory?.name || "");
+        
+        setPreviews({
+          main: serviceToEdit.image ? getImageUrl(serviceToEdit.image) : null,
+          visitors: serviceToEdit.photoOfVisitor?.map((url: string) => getImageUrl(url)) || [],
+          menu: serviceToEdit.hotelMenu?.map((url: string) => getImageUrl(url)) || []
+        });
+      } else {
+        // Reset states for create mode
+        setHotelName("");
+        setLocation({ address: "", lat: "", lng: "" });
+        setOperatingHours({ open: "", close: "" });
+        setPlaceData({ rating: 0, totalReviews: 0, reviews: [] });
+        setSelectedCategoryId("");
+        setSelectedCategoryName("");
+        setPreviews({ main: null, visitors: [], menu: [] });
+      }
+    }
+  }, [isOpen, serviceToEdit]);
 
   const searchStartTimeRef = useRef<number | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -323,7 +575,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
 
       const autocomplete = new google.maps.places.Autocomplete(inputElement, {
         types: ["establishment"],
-        fields: ["name", "formatted_address", "geometry"]
+        fields: ["name", "formatted_address", "geometry", "rating", "user_ratings_total", "reviews", "opening_hours"]
       });
 
       autocompleteRef.current = autocomplete;
@@ -334,7 +586,6 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
         const duration = searchStartTimeRef.current ? (endTime - searchStartTimeRef.current).toFixed(2) : "unknown";
         
         console.log("📍 Google Place Selected:");
-        console.log("- Data:", place);
         console.log("- Time taken (from typing start):", duration, "ms");
         
         if (place.geometry?.location) {
@@ -342,11 +593,28 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
           const addr = place.formatted_address || "";
           const lat = place.geometry.location.lat().toString();
           const lng = place.geometry.location.lng().toString();
+          const rating = place.rating || 0;
+          const totalReviews = place.user_ratings_total || 0;
+          const topReviews = place.reviews || [];
           
-          console.log("- Resolved Location:", { name, addr, lat, lng });
+          let open = "";
+          let close = "";
+          if (place.opening_hours?.periods && place.opening_hours.periods.length > 0) {
+              const period = place.opening_hours.periods[0];
+              if (period.open?.time) {
+                  open = `${period.open.time.substring(0, 2)}:${period.open.time.substring(2, 4)}`;
+              }
+              if (period.close?.time) {
+                  close = `${period.close.time.substring(0, 2)}:${period.close.time.substring(2, 4)}`;
+              }
+          }
+          
+          console.log("- Resolved Location:", { name, addr, lat, lng, rating, totalReviews, topReviews, open, close });
           
           setHotelName(name);
           setLocation({ address: addr, lat, lng });
+          setPlaceData({ rating, totalReviews, reviews: topReviews as any[] });
+          setOperatingHours({ open, close });
         }
         
         searchStartTimeRef.current = null;
@@ -375,13 +643,14 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
         reader.readAsDataURL(file);
     } else {
         const fileList = Array.from(files);
-        fileList.forEach(file => {
-            const reader = new FileReader();
-            reader.onloadend = () => setPreviews(prev => ({ 
-                ...prev, 
-                [type]: [...prev[type], reader.result as string] 
-            }));
-            reader.readAsDataURL(file);
+        Promise.all(fileList.map(file => {
+            return new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+        })).then(results => {
+            setPreviews(prev => ({ ...prev, [type]: results }));
         });
     }
   };
@@ -392,16 +661,22 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
     
     try {
         const formData = new FormData(e.currentTarget);
-        // Add coordinates and name if set via autocomplete
-        if (location.lat) formData.append("latitude", location.lat);
-        if (location.lng) formData.append("longitude", location.lng);
         
-        await createService(formData).unwrap();
-        toast.success("Service created successfully!");
+        if (placeData.reviews.length > 0 && typeof placeData.reviews[0] === 'object') {
+            formData.append("reviews", JSON.stringify(placeData.reviews));
+        }
+        
+        if (serviceToEdit) {
+            await updateService({ id: serviceToEdit._id, formData }).unwrap();
+            toast.success("Service updated successfully!");
+        } else {
+            await createService(formData).unwrap();
+            toast.success("Service created successfully!");
+        }
         onSuccess();
     } catch (error) {
         console.error(error);
-        toast.error("Failed to create service");
+        toast.error(`Failed to ${serviceToEdit ? 'update' : 'create'} service`);
     } finally {
         setIsLoading(false);
     }
@@ -416,8 +691,8 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
         {/* Modal Header */}
         <div className="p-8 border-b flex justify-between items-center bg-gray-50/80 sticky top-0 z-20">
            <div>
-               <h2 className="text-3xl font-black text-[#2E6F65] tracking-tight">Create Premium Service</h2>
-               <p className="text-gray-500 mt-1 font-medium">Fill in the details to list a new service on the platform.</p>
+               <h2 className="text-3xl font-black text-[#2E6F65] tracking-tight">{serviceToEdit ? "Edit Premium Service" : "Create Premium Service"}</h2>
+               <p className="text-gray-500 mt-1 font-medium">{serviceToEdit ? "Update the details of the existing service." : "Fill in the details to list a new service on the platform."}</p>
            </div>
            <button 
                 onClick={onClose} 
@@ -428,67 +703,6 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-10 overflow-y-auto flex-1 bg-white">
-           
-           {/* Section: Basic Info */}
-           <div className="space-y-6">
-               <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-                   <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2E6F65]">
-                       <Tag className="w-5 h-5" />
-                   </div>
-                   <h3 className="text-xl font-bold text-gray-800">Basic Information</h3>
-               </div>
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Service Name</Label>
-                    <Input 
-                        name="name" 
-                        required 
-                        placeholder="Grand Royal Hotel" 
-                        value={hotelName}
-                        onChange={(e) => setHotelName(e.target.value)}
-                        className="h-12 rounded-xl focus:ring-[#2E6F65] border-gray-200"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                      <Label className="font-bold text-gray-700">Category</Label>
-                      <select 
-                          name="cetagory" 
-                          required 
-                          onChange={(e) => {
-                              // find by value (could be ObjectId or fallback name)
-                              const cat = categories.find((c: any) => c._id === e.target.value);
-                              // get name from selected option text as fallback
-                              const selectedOption = e.target.options[e.target.selectedIndex];
-                              setSelectedCategoryName(cat?.name || selectedOption?.text || "");
-                          }}
-                          className="w-full h-12 rounded-xl border border-gray-200 px-4 focus:ring-2 focus:ring-[#2E6F65] focus:outline-none transition-all"
-                      >
-                          <option value="">Select Category</option>
-                          {["Restaurants", "Excursions", "Events"].map((name) => {
-                              // use real ObjectId from API if category exists, else use name as value
-                              const found = categories.find(
-                                  (c: any) => (c.name as string).toLowerCase().includes(name.toLowerCase())
-                              );
-                              return (
-                                  <option key={name} value={found?._id || name}>
-                                      {name}
-                                  </option>
-                              );
-                          })}
-                      </select>
-                   </div>
-                  <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Sub Category</Label>
-                    <Input name="subCetagory" required placeholder="Luxury / Boutique" className="h-12 rounded-xl border-gray-200" />
-                  </div>
-                  <div className="md:col-span-2 lg:col-span-3 space-y-2">
-                    <Label className="font-bold text-gray-700">Description</Label>
-                    <Textarea name="description" placeholder="Describe the service, amenities, and unique selling points..." className="min-h-[120px] rounded-2xl border-gray-200" />
-                  </div>
-               </div>
-           </div>
-
            {/* Section: Location (Google Maps Integration) */}
            <div className="space-y-6">
                <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
@@ -530,6 +744,73 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                   </div>
                </div>
 
+           {/* Section: Basic Info */}
+           <div className="space-y-6">
+               <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                   <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2E6F65]">
+                       <Tag className="w-5 h-5" />
+                   </div>
+                   <h3 className="text-xl font-bold text-gray-800">Basic Information</h3>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Service Name</Label>
+                    <Input 
+                        name="name" 
+                        required 
+                        placeholder="Grand Royal Hotel" 
+                        value={hotelName}
+                        onChange={(e) => setHotelName(e.target.value)}
+                        className="h-12 rounded-xl focus:ring-[#2E6F65] border-gray-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="font-bold text-gray-700">Category</Label>
+                      <select 
+                          name="cetagory" 
+                          required 
+                          value={selectedCategoryId}
+                          onChange={(e) => {
+                              const catId = e.target.value;
+                              setSelectedCategoryId(catId);
+                              const cat = categories.find((c: any) => c._id === catId);
+                              setSelectedCategoryName(cat?.name || "");
+                          }}
+                          className="w-full h-12 rounded-xl border border-gray-200 px-4 focus:ring-2 focus:ring-[#2E6F65] focus:outline-none transition-all"
+                      >
+                          <option value="">Select Category</option>
+                          {categories.map((cat: any) => (
+                              <option key={cat._id} value={cat._id}>
+                                  {cat.name}
+                              </option>
+                          ))}
+                      </select>
+                   </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-gray-700">Sub Category</Label>
+                    <select 
+                        name="subCetagory" 
+                        required 
+                        defaultValue={serviceToEdit?.subCetagory?._id || ""}
+                        className="w-full h-12 rounded-xl border border-gray-200 px-4 focus:ring-2 focus:ring-[#2E6F65] focus:outline-none transition-all disabled:opacity-50 disabled:bg-gray-50"
+                        disabled={!selectedCategoryId}
+                    >
+                        <option value="">Select Sub Category</option>
+                        {subCategories.map((sub: any) => (
+                            <option key={sub._id} value={sub._id}>
+                                {sub.name}
+                            </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-3 space-y-2">
+                    <Label className="font-bold text-gray-700">Description</Label>
+                    <Textarea name="description" defaultValue={serviceToEdit?.description || ""} placeholder="Describe the service, amenities, and unique selling points..." className="min-h-[120px] rounded-2xl border-gray-200" />
+                  </div>
+               </div>
+           </div>
+
            {/* Section: Media Uploads */}
            <div className="space-y-6">
                <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
@@ -555,7 +836,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                                 <p className="text-xs font-bold text-gray-400 group-hover:text-gray-600">Click to upload cover</p>
                             </>
                         )}
-                        <input id="main-img" type="file" name="image" className="hidden" onChange={(e) => handleImageChange('main', e)} required />
+                        <input id="main-img" type="file" name="image" className="hidden" onChange={(e) => handleImageChange('main', e)} required={!serviceToEdit} />
                     </div>
                   </div>
 
@@ -564,10 +845,30 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                     <Label className="font-bold text-gray-700">Visitor Photos (Multiple)</Label>
                     <div 
                         className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer flex flex-col items-center justify-center p-4 overflow-hidden"
-                        onClick={() => document.getElementById('visitor-img')?.click()}
+                        onClick={(e) => {
+                            if ((e.target as HTMLElement).tagName !== 'IMG') {
+                                document.getElementById('visitor-img')?.click();
+                            }
+                        }}
                     >
-                        <Upload className="w-10 h-10 text-gray-300 mb-2" />
-                        <p className="text-xs font-bold text-gray-400 text-center">{previews.visitors.length} Photos added</p>
+                        {previews.visitors.length > 0 ? (
+                            <div className="flex gap-2 w-full overflow-x-auto snap-x pb-2 custom-scrollbar">
+                                {previews.visitors.map((src, idx) => (
+                                    <div key={idx} className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden snap-center border border-gray-100 shadow-sm">
+                                        <Image src={src} alt={`Visitor ${idx}`} fill className="object-cover" />
+                                    </div>
+                                ))}
+                                <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400 hover:text-[#2E6F65] hover:border-[#2E6F65] transition-colors" onClick={() => document.getElementById('visitor-img')?.click()}>
+                                    <Plus className="w-6 h-6" />
+                                    <span className="text-[10px] mt-1 font-bold">Add More</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <Upload className="w-10 h-10 text-gray-300 mb-2" />
+                                <p className="text-xs font-bold text-gray-400 text-center">Click to upload visitor photos</p>
+                            </>
+                        )}
                         <input id="visitor-img" type="file" name="photoOfVisitor" multiple className="hidden" onChange={(e) => handleImageChange('visitors', e)} />
                     </div>
                   </div>
@@ -577,10 +878,30 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                     <Label className="font-bold text-gray-700">Hotel Menu (Multiple)</Label>
                     <div 
                         className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer flex flex-col items-center justify-center p-4 overflow-hidden"
-                        onClick={() => document.getElementById('menu-img')?.click()}
+                        onClick={(e) => {
+                            if ((e.target as HTMLElement).tagName !== 'IMG') {
+                                document.getElementById('menu-img')?.click();
+                            }
+                        }}
                     >
-                        <Upload className="w-10 h-10 text-gray-300 mb-2" />
-                        <p className="text-xs font-bold text-gray-400 text-center">{previews.menu.length} Items added</p>
+                        {previews.menu.length > 0 ? (
+                            <div className="flex gap-2 w-full overflow-x-auto snap-x pb-2 custom-scrollbar">
+                                {previews.menu.map((src, idx) => (
+                                    <div key={idx} className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden snap-center border border-gray-100 shadow-sm">
+                                        <Image src={src} alt={`Menu ${idx}`} fill className="object-cover" />
+                                    </div>
+                                ))}
+                                <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400 hover:text-[#2E6F65] hover:border-[#2E6F65] transition-colors" onClick={() => document.getElementById('menu-img')?.click()}>
+                                    <Plus className="w-6 h-6" />
+                                    <span className="text-[10px] mt-1 font-bold">Add More</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <Upload className="w-10 h-10 text-gray-300 mb-2" />
+                                <p className="text-xs font-bold text-gray-400 text-center">Click to upload menu items</p>
+                            </>
+                        )}
                         <input id="menu-img" type="file" name="hotelMenu" multiple className="hidden" onChange={(e) => handleImageChange('menu', e)} />
                     </div>
                   </div>
@@ -599,21 +920,21 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <Label className="font-bold text-gray-700">Open Time</Label>
-                    <Input type="time" name="openTime" className="h-12 rounded-xl" />
+                    <Input type="time" name="openTime" value={operatingHours.open} onChange={(e) => setOperatingHours(prev => ({ ...prev, open: e.target.value }))} className="h-12 rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold text-gray-700">Close Time</Label>
-                    <Input type="time" name="closeTime" className="h-12 rounded-xl" />
+                    <Input type="time" name="closeTime" value={operatingHours.close} onChange={(e) => setOperatingHours(prev => ({ ...prev, close: e.target.value }))} className="h-12 rounded-xl" />
                   </div>
                    {selectedCategoryName.toLowerCase() === "events" && (
                      <>
                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                          <Label className="font-bold text-gray-700">Starting Time</Label>
-                         <Input type="time" name="startTime" className="h-12 rounded-xl border-[#2E6F65]/30 bg-green-50/30" />
+                         <Input type="time" name="startTime" defaultValue={serviceToEdit?.startTime || ""} className="h-12 rounded-xl border-[#2E6F65]/30 bg-green-50/30" />
                        </div>
                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                          <Label className="font-bold text-gray-700">Ending Time</Label>
-                         <Input type="time" name="endTime" className="h-12 rounded-xl border-[#2E6F65]/30 bg-green-50/30" />
+                         <Input type="time" name="endTime" defaultValue={serviceToEdit?.endTime || ""} className="h-12 rounded-xl border-[#2E6F65]/30 bg-green-50/30" />
                        </div>
                      </>
                    )}
@@ -625,11 +946,11 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                            <p className="font-bold text-gray-800">Special Offer</p>
                            <p className="text-xs text-gray-500">Enable discounts</p>
                        </div>
-                       <Switch name="offer" className="data-[state=checked]:bg-[#2E6F65]" />
+                       <Switch name="offer" defaultChecked={serviceToEdit?.offer} className="data-[state=checked]:bg-[#2E6F65]" />
                    </div>
                    <div className="md:col-span-2 space-y-2">
                         <Label className="font-bold text-gray-700">Offer Details</Label>
-                        <Input name="offerType" placeholder="e.g. 20% OFF on Weekend stays" className="h-12 rounded-xl" />
+                        <Input name="offerType" defaultValue={serviceToEdit?.offerType || ""} placeholder="e.g. 20% OFF on Weekend stays" className="h-12 rounded-xl" />
                    </div>
 
                    
@@ -641,21 +962,61 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label className="font-bold text-gray-700">Initial Rating</Label>
-                    <Input type="number" step="0.1" max="5" name="averageRating" defaultValue="0" className="h-12 rounded-xl" />
+                    <Input type="number" step="0.1" max="5" name="averageRating" value={placeData.rating} readOnly className="h-12 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Response Time (Hrs)</Label>
-                    <Input type="number" name="responseTimeHours" defaultValue="0" className="h-12 rounded-xl" />
+                    <Label className="font-bold text-gray-700">Total Reviews</Label>
+                    <Input type="number" name="totalReviews" value={placeData.totalReviews} readOnly className="h-12 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed" />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Date</Label>
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <Input type="text" name="date" placeholder="May 2024" className="h-12 rounded-xl pl-10" />
-                    </div>
-                  </div>
+                 
+                  {selectedCategoryName.toLowerCase() === "events" && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="font-bold text-gray-700">Date</Label>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Input type="text" name="date" defaultValue={serviceToEdit?.date || ""} placeholder="May 2024" className="h-12 rounded-xl pl-10" />
+                        </div>
+                      </div>
+                  )}
                </div>
            </div>
+           
+           {/* Section: Top Reviews (Auto populated) */}
+           {placeData.reviews.length > 0 && (
+               <div className="space-y-6 pt-6 border-t border-gray-100 animate-in fade-in duration-500">
+                   <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                       <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center text-yellow-600">
+                           <Star className="w-5 h-5 fill-current" />
+                       </div>
+                       <h3 className="text-xl font-bold text-gray-800">Top Reviews from Maps</h3>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {placeData.reviews.map((review, idx) => (
+                           <div key={idx} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+                               <div className="flex items-center gap-3">
+                                   {review.profile_photo_url ? (
+                                       <img src={review.profile_photo_url} alt={review.author_name} className="w-10 h-10 rounded-full object-cover" />
+                                   ) : (
+                                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                                           {review.author_name?.charAt(0)}
+                                       </div>
+                                   )}
+                                   <div>
+                                       <p className="font-bold text-sm text-gray-800 line-clamp-1">{review.author_name}</p>
+                                       <div className="flex items-center gap-1">
+                                           <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                                           <span className="text-xs font-bold text-gray-600">{review.rating}</span>
+                                           <span className="text-xs text-gray-400 ml-1 truncate max-w-[100px]">{review.relative_time_description}</span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <p className="text-sm text-gray-600 line-clamp-3 italic">"{review.text}"</p>
+                           </div>
+                       ))}
+                   </div>
+               </div>
+           )}
            
            {/* Form Actions */}
            <div className="pt-10 flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-white pb-4">
@@ -678,7 +1039,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
                         Creating...
                     </div>
                 ) : (
-                    "Create Premium Service"
+                    "Update Service"
                 )}
               </Button>
            </div>
