@@ -182,9 +182,9 @@ export default function UsersPage() {
             </div>
             
             {/* Blocked Users Button */}
-            <Button className="bg-white text-[#2E6F65] hover:bg-white/90 font-semibold h-11 px-6 rounded-lg w-full sm:w-auto">
+            {/* <Button className="bg-white text-[#2E6F65] hover:bg-white/90 font-semibold h-11 px-6 rounded-lg w-full sm:w-auto">
                 Blocked Users
-            </Button>
+            </Button> */}
         </div>
       </div>
 
