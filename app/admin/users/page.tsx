@@ -29,10 +29,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, Ban, Search, X } from "lucide-react";
+import { Eye, Ban, Search, X, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
-import { useGetAllUserQuery, useChangeStatusMutation } from "@/store/api/userApi";
+import { useGetAllUserQuery, useChangeStatusMutation, useDeleteUserMutation } from "@/store/api/userApi";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner"; // Assuming sonner is used for notifications based on common project patterns
 
@@ -88,6 +88,9 @@ export default function UsersPage() {
   const [userToBlock, setUserToBlock] = useState<any>(null);
   const [isBlockOpen, setIsBlockOpen] = useState(false);
 
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -104,6 +107,7 @@ export default function UsersPage() {
   });
 
   const [changeStatus] = useChangeStatusMutation();
+  const [deleteUser] = useDeleteUserMutation();
 
   const usersData = usersResponse?.data || [];
   const meta = usersResponse?.meta || { totalPages: 1, totalUsers: 0 };
@@ -121,6 +125,22 @@ export default function UsersPage() {
         setUserToBlock(null);
     } catch (error) {
         toast.error("Failed to block user");
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    try {
+      const promise = deleteUser(id).unwrap();
+      toast.promise(promise, {
+        loading: 'Deleting user...',
+        success: 'User deleted successfully!',
+        error: 'Failed to delete user'
+      });
+      await promise;
+      refetch();
+      setIsDeleteOpen(false);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -238,6 +258,12 @@ export default function UsersPage() {
                                     >
                                         <Eye className="w-5 h-5" />
                                     </button>
+                                    <button 
+                                        onClick={() => { setUserToDelete(u); setIsDeleteOpen(true); }}
+                                        className="text-red-500 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
                                 </div>
                              </TableCell>
                         </TableRow>
@@ -315,6 +341,43 @@ export default function UsersPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={() => handleDeleteUser(userToDelete?._id)}
+        userName={userToDelete?.userName}
+      />
+
     </div>
   );
 }
+
+// Delete Confirmation Modal
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, userName }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; userName?: string }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+            <Trash2 className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Delete User?</h2>
+          <p className="text-gray-500 text-sm">
+            Are you sure you want to delete <span className="font-bold text-gray-800">{userName || "this user"}</span>? This action cannot be undone and will permanently remove all associated data.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 mt-8">
+          <Button onClick={onClose} variant="outline" className="flex-1 rounded-xl h-12 font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} className="flex-1 rounded-xl h-12 font-bold bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/20 transition-all">
+            Yes, Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};

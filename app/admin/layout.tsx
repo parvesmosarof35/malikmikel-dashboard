@@ -3,11 +3,27 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./components/sidebar";
 import MainHeader from "./components/main-header";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  
+  const token = useAppSelector((state) => state.auth.token);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Redirect to auth if no token
+  useEffect(() => {
+    if (isClient && !token) {
+      router.push("/auth");
+    }
+  }, [token, isClient, router]);
 
   // Ensure: initially closed on mobile, open on desktop (lg: 1024px)
   useEffect(() => {
@@ -35,6 +51,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setIsSidebarOpen(false);
     }
   }, [pathname]);
+
+  // Don't render anything if on client and not authenticated to prevent flash
+  if (!isClient || !token) {
+    return <div className="min-h-screen bg-white flex items-center justify-center" />;
+  }
 
   return (
     <div className="flex h-screen relative overflow-hidden bg-white">

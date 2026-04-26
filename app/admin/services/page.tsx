@@ -874,37 +874,39 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                   </div>
 
                   {/* Menu Photos */}
-                  <div className="space-y-3">
-                    <Label className="font-bold text-gray-700">Hotel Menu (Multiple)</Label>
-                    <div 
-                        className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer flex flex-col items-center justify-center p-4 overflow-hidden"
-                        onClick={(e) => {
-                            if ((e.target as HTMLElement).tagName !== 'IMG') {
-                                document.getElementById('menu-img')?.click();
-                            }
-                        }}
-                    >
-                        {previews.menu.length > 0 ? (
-                            <div className="flex gap-2 w-full overflow-x-auto snap-x pb-2 custom-scrollbar">
-                                {previews.menu.map((src, idx) => (
-                                    <div key={idx} className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden snap-center border border-gray-100 shadow-sm">
-                                        <Image src={src} alt={`Menu ${idx}`} fill className="object-cover" />
+                  {selectedCategoryName.toLowerCase() === "restaurants" && (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="font-bold text-gray-700">Hotel Menu (Multiple)</Label>
+                        <div 
+                            className="relative h-48 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer flex flex-col items-center justify-center p-4 overflow-hidden"
+                            onClick={(e) => {
+                                if ((e.target as HTMLElement).tagName !== 'IMG') {
+                                    document.getElementById('menu-img')?.click();
+                                }
+                            }}
+                        >
+                            {previews.menu.length > 0 ? (
+                                <div className="flex gap-2 w-full overflow-x-auto snap-x pb-2 custom-scrollbar">
+                                    {previews.menu.map((src, idx) => (
+                                        <div key={idx} className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden snap-center border border-gray-100 shadow-sm">
+                                            <Image src={src} alt={`Menu ${idx}`} fill className="object-cover" />
+                                        </div>
+                                    ))}
+                                    <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400 hover:text-[#2E6F65] hover:border-[#2E6F65] transition-colors" onClick={() => document.getElementById('menu-img')?.click()}>
+                                        <Plus className="w-6 h-6" />
+                                        <span className="text-[10px] mt-1 font-bold">Add More</span>
                                     </div>
-                                ))}
-                                <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400 hover:text-[#2E6F65] hover:border-[#2E6F65] transition-colors" onClick={() => document.getElementById('menu-img')?.click()}>
-                                    <Plus className="w-6 h-6" />
-                                    <span className="text-[10px] mt-1 font-bold">Add More</span>
                                 </div>
-                            </div>
-                        ) : (
-                            <>
-                                <Upload className="w-10 h-10 text-gray-300 mb-2" />
-                                <p className="text-xs font-bold text-gray-400 text-center">Click to upload menu items</p>
-                            </>
-                        )}
-                        <input id="menu-img" type="file" name="hotelMenu" multiple className="hidden" onChange={(e) => handleImageChange('menu', e)} />
-                    </div>
-                  </div>
+                            ) : (
+                                <>
+                                    <Upload className="w-10 h-10 text-gray-300 mb-2" />
+                                    <p className="text-xs font-bold text-gray-400 text-center">Click to upload menu items</p>
+                                </>
+                            )}
+                            <input id="menu-img" type="file" name="hotelMenu" multiple className="hidden" onChange={(e) => handleImageChange('menu', e)} />
+                        </div>
+                      </div>
+                  )}
                </div>
            </div>
 
@@ -918,14 +920,18 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Open Time</Label>
-                    <Input type="time" name="openTime" value={operatingHours.open} onChange={(e) => setOperatingHours(prev => ({ ...prev, open: e.target.value }))} className="h-12 rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Close Time</Label>
-                    <Input type="time" name="closeTime" value={operatingHours.close} onChange={(e) => setOperatingHours(prev => ({ ...prev, close: e.target.value }))} className="h-12 rounded-xl" />
-                  </div>
+                  {selectedCategoryName.toLowerCase() !== "events" && selectedCategoryName.toLowerCase() !== "excursions" && (
+                    <>
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="font-bold text-gray-700">Open Time</Label>
+                        <Input type="time" name="openTime" value={operatingHours.open} onChange={(e) => setOperatingHours(prev => ({ ...prev, open: e.target.value }))} className="h-12 rounded-xl" />
+                      </div>
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="font-bold text-gray-700">Close Time</Label>
+                        <Input type="time" name="closeTime" value={operatingHours.close} onChange={(e) => setOperatingHours(prev => ({ ...prev, close: e.target.value }))} className="h-12 rounded-xl" />
+                      </div>
+                    </>
+                  )}
                    {selectedCategoryName.toLowerCase() === "events" && (
                      <>
                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -973,8 +979,8 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                       <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                         <Label className="font-bold text-gray-700">Date</Label>
                         <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <Input type="text" name="date" defaultValue={serviceToEdit?.date || ""} placeholder="May 2024" className="h-12 rounded-xl pl-10" />
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                            <Input type="date" name="date" defaultValue={serviceToEdit?.date || ""} className="h-12 rounded-xl pl-10 text-gray-700" />
                         </div>
                       </div>
                   )}
@@ -1036,10 +1042,10 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                 {isLoading ? (
                     <div className="flex items-center gap-2">
                         <Loader className="w-5 h-5 animate-spin" />
-                        Creating...
+                        {serviceToEdit ? "Updating..." : "Creating..."}
                     </div>
                 ) : (
-                    "Update Service"
+                    serviceToEdit ? "Update Service" : "Create Service"
                 )}
               </Button>
            </div>

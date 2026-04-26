@@ -43,7 +43,7 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
           </button>
           <div className="flex items-center gap-4">
             {/* Notification */}
-            <button
+            {/* <button
               type="button"
               aria-label="Notifications"
               onClick={() => router.push('/admin/notifications')}
@@ -53,7 +53,7 @@ export default function MainHeader({ toggleSidebar }: MainHeaderProps) {
               {unreadCount > 0 && (
                 <span className="absolute top-2 right-2 inline-flex h-2 w-2 rounded-full bg-[#E53E3E]"></span>
               )}
-            </button>
+            </button> */}
             
             <div
               onClick={() => router.push("/admin/profile")}

@@ -43,6 +43,8 @@ export default function CreateAdminPage() {
     imagePreview: null as string | null
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // API Hooks
@@ -92,15 +94,19 @@ export default function CreateAdminPage() {
   };
 
   const handleDelete = async (id: string) => {
-      if (confirm("Are you sure you want to delete this admin?")) {
-          try {
-              await deleteAdmin(id).unwrap();
-              toast.success("Admin deleted successfully");
-              refetch();
-          } catch (error) {
-              toast.error("Failed to delete admin");
-          }
-      }
+    try {
+      const promise = deleteAdmin(id).unwrap();
+      toast.promise(promise, {
+        loading: 'Deleting admin...',
+        success: 'Admin deleted successfully!',
+        error: 'Failed to delete admin'
+      });
+      await promise;
+      refetch();
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -296,7 +302,10 @@ export default function CreateAdminPage() {
                                         variant="ghost" 
                                         size="icon" 
                                         className="h-10 w-10 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
-                                        onClick={() => handleDelete(admin._id)}
+                                        onClick={() => {
+                                            setAdminToDelete(admin);
+                                            setIsDeleteModalOpen(true);
+                                        }}
                                     >
                                         <Trash2 className="h-5 w-5" />
                                     </Button>
@@ -351,6 +360,43 @@ export default function CreateAdminPage() {
           </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => handleDelete(adminToDelete?._id)}
+        adminName={adminToDelete?.name}
+      />
+
     </div>
   );
 }
+
+// Delete Confirmation Modal
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, adminName }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; adminName?: string }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+            <Trash2 className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Delete Admin?</h2>
+          <p className="text-gray-500 text-sm">
+            Are you sure you want to delete <span className="font-bold text-gray-800">{adminName || "this admin"}</span>? This action cannot be undone and will permanently remove all associated privileges.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 mt-8">
+          <Button onClick={onClose} variant="outline" className="flex-1 rounded-xl h-12 font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} className="flex-1 rounded-xl h-12 font-bold bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/20 transition-all">
+            Yes, Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};

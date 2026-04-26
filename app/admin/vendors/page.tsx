@@ -186,6 +186,8 @@ export default function VendorsPage() {
   // State
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<any>(null);
   
   const { data: vendorsResponse, isLoading } = useGetAllVendorsQuery({ page: currentPage, limit: 10 });
   const [deleteVendor] = useDeleteVendorMutation();
@@ -193,6 +195,21 @@ export default function VendorsPage() {
 
   const vendors = vendorsResponse?.data || [];
   const meta = vendorsResponse?.meta || { totalPage: 1, total: 0 };
+
+  const handleDeleteVendor = async (id: string) => {
+    try {
+      const promise = deleteVendor(id).unwrap();
+      toast.promise(promise, {
+        loading: 'Deleting vendor...',
+        success: 'Vendor deleted successfully!',
+        error: 'Failed to delete vendor'
+      });
+      await promise;
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -260,17 +277,11 @@ export default function VendorsPage() {
                                 <TableCell className="py-4 pr-6">
                                     <div className="flex items-center justify-end gap-3">
                                         <button 
-                                            onClick={async () => {
-                                                if (window.confirm("Are you sure you want to delete this vendor?")) {
-                                                    try {
-                                                        await deleteVendor(vendor._id).unwrap();
-                                                        toast.success("Vendor deleted successfully");
-                                                    } catch (error) {
-                                                        toast.error("Failed to delete vendor");
-                                                    }
-                                                }
+                                            onClick={() => {
+                                                setVendorToDelete(vendor);
+                                                setIsDeleteModalOpen(true);
                                             }}
-                                            className="text-red-500 hover:text-red-600 transition-colors"
+                                            className="text-red-500 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
@@ -342,8 +353,43 @@ export default function VendorsPage() {
              }
           }}
        />
+
+       {/* Delete Confirmation Modal */}
+       <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={() => handleDeleteVendor(vendorToDelete?._id)}
+          vendorName={vendorToDelete?.name}
+       />
     </div>
   );
 }
 
+// Delete Confirmation Modal
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, vendorName }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; vendorName?: string }) => {
+  if (!isOpen) return null;
 
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+            <Trash2 className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Delete Vendor?</h2>
+          <p className="text-gray-500 text-sm">
+            Are you sure you want to delete <span className="font-bold text-gray-800">{vendorName || "this vendor"}</span>? This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 mt-8">
+          <Button onClick={onClose} variant="outline" className="flex-1 rounded-xl h-12 font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} className="flex-1 rounded-xl h-12 font-bold bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/20 transition-all">
+            Yes, Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
