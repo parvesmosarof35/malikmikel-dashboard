@@ -106,6 +106,8 @@ function FaqSection() {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [faqToDelete, setFaqToDelete] = useState<any>(null);
 
   const { data, isLoading, refetch } = useGetAllFaqQuery({ page, limit: 10 });
   const [deleteFaq] = useDeleteFaqMutation();
@@ -114,10 +116,10 @@ function FaqSection() {
   const meta = data?.data?.meta || { totalPages: 1, total: 0 };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this FAQ?")) return;
     try {
       await deleteFaq(id).unwrap();
       toast.success("FAQ deleted");
+      setIsDeleteModalOpen(false);
       refetch();
     } catch {
       toast.error("Failed to delete FAQ");
@@ -186,7 +188,10 @@ function FaqSection() {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(faq._id)}
+                      onClick={() => {
+                        setFaqToDelete(faq);
+                        setIsDeleteModalOpen(true);
+                      }}
                       className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -245,6 +250,15 @@ function FaqSection() {
           onSuccess={() => { setIsModalOpen(false); refetch(); }}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => handleDelete(faqToDelete?._id)}
+        itemName={faqToDelete?.question}
+        itemType="FAQ"
+      />
     </>
   );
 }
