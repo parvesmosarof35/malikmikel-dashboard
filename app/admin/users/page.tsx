@@ -163,7 +163,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 space-y-6">
+    <div className="min-h-screen space-y-5">
       
       {/* Header Section */}
       <div className="bg-gradient-to-r from-[#2E6F65] to-[#58976B] rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
@@ -188,17 +188,8 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Filter Row */}
-      {/* <div className="flex justify-end">
-         <select className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm outline-none cursor-pointer hover:border-gray-300 transition-colors">
-            <option>Date</option>
-            <option>Name</option>
-            <option>Status</option>
-        </select>
-      </div> */}
-
       {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-5">
         <div className="overflow-x-auto">
             <Table>
                 <TableHeader className="bg-white">

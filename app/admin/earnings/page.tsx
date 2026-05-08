@@ -56,7 +56,7 @@ export default function EarningsPage() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-transparent p-6 space-y-8">
+    <div className="min-h-screen bg-transparent space-y-5">
       
       {/* Stats Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
@@ -85,7 +85,7 @@ export default function EarningsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden mt-0">
+        <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden mt-0 p-5">
             <div className="overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-white">

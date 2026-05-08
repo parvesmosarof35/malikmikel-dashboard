@@ -20,7 +20,7 @@ export default function AnalyticsPage() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-transparent p-6 space-y-6">
+    <div className="min-h-screen bg-transparent space-y-5">
       
       {/* Header */}
       <div className={`${buttonbg} rounded-xl p-4 px-6 shadow-sm`}>

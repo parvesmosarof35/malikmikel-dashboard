@@ -110,7 +110,11 @@ export default function CreateAdminPage() {
   };
 
   return (
+<<<<<<< Updated upstream
     <div className="w-full mx-auto p-6 space-y-8 animate-in fade-in duration-500">
+=======
+    <div className="w-full mx-auto space-y-5">
+>>>>>>> Stashed changes
       
       <div className="grid lg:grid-cols-[1fr_1.5fr] gap-8">
           
@@ -237,6 +241,7 @@ export default function CreateAdminPage() {
               </div>
           </div>
 
+<<<<<<< Updated upstream
           {/* Existing Admins List Section */}
           <div className="bg-white rounded-2xl shadow-xl shadow-gray-100 border border-gray-100 overflow-hidden flex flex-col h-full">
               <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
@@ -257,6 +262,54 @@ export default function CreateAdminPage() {
                             <TableHead className={`font-black text-[10px] uppercase tracking-widest py-5 ${textPrimary}`}>Email</TableHead>
                             <TableHead className={`font-black text-[10px] uppercase tracking-widest py-5 ${textPrimary}`}>Role</TableHead>
                             <TableHead className={`font-black text-[10px] uppercase tracking-widest py-5 ${textPrimary} text-right pr-8`}>Actions</TableHead>
+=======
+      {/* Existing Admins List Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-bold text-primary mb-6">Existing Admins</h2>
+          
+          <div className="mb-6">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {admins.map((admin) => (
+                        <TableRow key={admin.id}>
+                            <TableCell className="font-medium">{admin.name}</TableCell>
+                            <TableCell>{admin.email}</TableCell>
+                            <TableCell>
+                                <Badge variant="outline" className="bg-gray-50">
+                                    {admin.role}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>
+                                <Badge 
+                                    className={
+                                        admin.status === 'Active' ? 'bg-green-100 text-green-700 hover:bg-green-100' : 
+                                        'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                                    }
+                                    variant="secondary"
+                                >
+                                    {admin.status}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleDelete(admin.id)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </TableCell>
+>>>>>>> Stashed changes
                         </TableRow>
                     </TableHeader>
                     <TableBody>

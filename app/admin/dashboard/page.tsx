@@ -103,7 +103,7 @@ export default function AdminDashboard() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-gray-50/50 space-y-8">
+    <div className="min-h-screen bg-gray-50/50 space-y-5">
       
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
 
       {/* Recent Users Table */}
       <div className="bg-white rounded-t-xl shadow-sm border border-gray-100 overflow-hidden" >
-        <div className={` p-6 pb-4  ${buttonbg} text-white hover:bg-[#58976B]/90`}>
+        <div className={` p-5 pb-5  ${buttonbg} text-white hover:bg-[#58976B]/90`}>
              <h2 className="text-xl font-bold">Recent Users</h2>
         </div>
         <div className="overflow-x-auto">

@@ -160,7 +160,7 @@ export default function ReportPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent p-6 space-y-6">
+    <div className="min-h-screen bg-transparent space-y-5">
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -178,6 +178,7 @@ export default function ReportPage() {
       </div>
 
       {/* Table Section */}
+<<<<<<< Updated upstream
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative z-10">
         <div className="p-6 border-b border-gray-50 flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -199,6 +200,18 @@ export default function ReportPage() {
                         <TableHead className={`font-bold py-5 ${textPrimary}`}>Subject</TableHead>
                         <TableHead className={`font-bold py-5 ${textPrimary}`}>Date</TableHead>
                         <TableHead className={`font-bold py-5 ${textPrimary} text-right pr-8`}>Action</TableHead>
+=======
+      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 p-5">
+        <div className="overflow-x-auto">
+            <Table>
+                <TableHeader className="bg-white">
+                    <TableRow className="">
+                        <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-8`}>S.ID</TableHead>
+                        <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Report From</TableHead>
+                        <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Report Reason</TableHead>
+                        <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Date & Time</TableHead>
+                        <TableHead className={`font-semibold text-base py-5 ${textPrimary} text-right pr-8`}>Action</TableHead>
+>>>>>>> Stashed changes
                     </TableRow>
                 </TableHeader>
                 <TableBody>
