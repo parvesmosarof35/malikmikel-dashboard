@@ -193,42 +193,7 @@ export default function CategoryPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-<<<<<<< Updated upstream
     <div className="min-h-screen bg-transparent p-6 space-y-6">
-=======
-    <div className="min-h-screen bg-transparent space-y-5">
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <h3 className="text-3xl font-bold text-gray-900">156K</h3>
-                <p className="text-gray-500 font-medium mt-1">Countries</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-[#2E6F65]">
-                <Globe className="w-6 h-6" />
-            </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <h3 className="text-3xl font-bold text-gray-900">156,234</h3>
-                <p className="text-gray-500 font-medium mt-1">Categories</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-[#2E6F65]">
-                <Layers className="w-6 h-6" />
-            </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <h3 className="text-3xl font-bold text-gray-900">47</h3>
-                <p className="text-gray-500 font-medium mt-1">Sub Categories</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-[#2E6F65]">
-                <Store className="w-6 h-6" />
-            </div>
-        </div>
-      </div>
->>>>>>> Stashed changes
 
       {/* ── Stats ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -252,7 +217,6 @@ export default function CategoryPage() {
         </div>
       </div>
 
-<<<<<<< Updated upstream
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div
         className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}
@@ -264,102 +228,6 @@ export default function CategoryPage() {
         >
           + Add Category
         </Button>
-=======
-      {/* Content Area */}
-      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between p-5">
-      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between p-5">
-         {view === "categories" ? (
-             <>
-             <div className="overflow-x-auto">
-                <Table>
-                    <TableHeader className="bg-white">
-                        <TableRow className="">
-                        <TableRow className="">
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-6`}>S.ID</TableHead>
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Category Name</TableHead>
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary} text-right pr-6`}>Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {initialCategories.map((cat, i) => (
-                            <TableRow key={i} className="hover:bg-gray-50 border-b border-gray-100 last:border-0">
-                                <TableCell className="font-medium text-gray-600 py-4 pl-6">{cat.id}</TableCell>
-                                <TableCell className="text-gray-900 font-medium py-4">{cat.name}</TableCell>
-                                <TableCell className="py-4 pr-6">
-                                    <div className="flex items-center justify-end gap-3">
-                                        <button className="text-red-500 hover:text-red-600 transition-colors">
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                        <button className="text-gray-800 hover:text-black transition-colors">
-                                            <Edit className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-             </div>
-             {/* Pagination */}
-             <div className="p-4 border-t border-gray-100">
-                <Pagination>
-                    <PaginationContent>
-                        <PaginationItem><PaginationPrevious href="#" className="text-gray-500 hover:text-[#2E6F65]" /></PaginationItem>
-                        <PaginationItem><PaginationLink href="#" isActive className="bg-[#2E6F65] text-white hover:bg-[#2E6F65]/90 hover:text-white border-0">1</PaginationLink></PaginationItem>
-                        <PaginationItem><PaginationNext href="#" className="text-gray-500 hover:text-[#2E6F65]" /></PaginationItem>
-                    </PaginationContent>
-                </Pagination>
-             </div>
-             </>
-         ) : (
-             <>
-             <div className="overflow-x-auto">
-                <Table>
-                    <TableHeader className="bg-white">
-                        <TableRow className="border-b border-[#2E6F65] hover:bg-transparent">
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-6`}>S.ID</TableHead>
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Sub Category Name</TableHead>
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Category of</TableHead>
-                            <TableHead className={`font-semibold text-base py-5 ${textPrimary} text-right pr-6`}>Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {initialSubCategories.map((sub, i) => (
-                            <TableRow key={i} className="hover:bg-gray-50 border-b border-gray-100 last:border-0">
-                                <TableCell className="font-medium text-gray-600 py-4 pl-6">{sub.id}</TableCell>
-                                <TableCell className="text-gray-900 font-medium py-4">{sub.name}</TableCell>
-                                <TableCell className="text-gray-600 py-4">{sub.parentCategory}</TableCell>
-                                <TableCell className="py-4 pr-6">
-                                    <div className="flex items-center justify-end gap-3">
-                                        <button className="text-red-500 hover:text-red-600 transition-colors">
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                        <button 
-                                            onClick={() => setIsModalOpen(true)}
-                                            className="text-gray-800 hover:text-black transition-colors"
-                                        >
-                                            <Edit className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-             </div>
-             {/* Pagination */}
-             <div className="p-4 border-t border-gray-100">
-                <Pagination>
-                    <PaginationContent>
-                        <PaginationItem><PaginationPrevious href="#" className="text-gray-500 hover:text-[#2E6F65]" /></PaginationItem>
-                        <PaginationItem><PaginationLink href="#" isActive className="bg-[#2E6F65] text-white hover:bg-[#2E6F65]/90 hover:text-white border-0">1</PaginationLink></PaginationItem>
-                        <PaginationItem><PaginationNext href="#" className="text-gray-500 hover:text-[#2E6F65]" /></PaginationItem>
-                    </PaginationContent>
-                </Pagination>
-             </div>
-             </>
-         )}
->>>>>>> Stashed changes
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────────────── */}

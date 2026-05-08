@@ -223,7 +223,6 @@ export default function VendorsPage() {
 
   return (
     <div className="min-h-screen bg-transparent space-y-5">
-    <div className="min-h-screen bg-transparent space-y-5">
       
       {/* Header */}
       <div className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}>
@@ -242,17 +241,10 @@ export default function VendorsPage() {
       </div>
 
       {/* Content Area */}
-<<<<<<< Updated upstream
-      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between">
-=======
       <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between p-5">
-         {view === "list" ? (
-             <>
->>>>>>> Stashed changes
              <div className="overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-white">
-                        <TableRow className="">
                         <TableRow className="">
                             <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-6`}>S.ID</TableHead>
                             <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Name</TableHead>
