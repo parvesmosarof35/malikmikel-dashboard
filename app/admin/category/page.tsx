@@ -267,11 +267,13 @@ export default function CategoryPage() {
 =======
       {/* Content Area */}
       <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between p-5">
+      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden -mt-4 relative z-10 min-h-[500px] flex flex-col justify-between p-5">
          {view === "categories" ? (
              <>
              <div className="overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-white">
+                        <TableRow className="">
                         <TableRow className="">
                             <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-6`}>S.ID</TableHead>
                             <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Category Name</TableHead>

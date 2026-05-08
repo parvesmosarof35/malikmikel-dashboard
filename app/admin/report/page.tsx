@@ -161,6 +161,7 @@ export default function ReportPage() {
 
   return (
     <div className="min-h-screen bg-transparent space-y-5">
+    <div className="min-h-screen bg-transparent space-y-5">
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -205,6 +206,7 @@ export default function ReportPage() {
         <div className="overflow-x-auto">
             <Table>
                 <TableHeader className="bg-white">
+                    <TableRow className="">
                     <TableRow className="">
                         <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-8`}>S.ID</TableHead>
                         <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Report From</TableHead>

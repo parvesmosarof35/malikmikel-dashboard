@@ -21,9 +21,11 @@ export default function DummyContentsPage() {
 
       {/* Content Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[500px] flex flex-col justify-between p-5">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[500px] flex flex-col justify-between p-5">
          <div className="overflow-x-auto">
             <Table>
                 <TableHeader className="bg-white">
+                    <TableRow className="">
                     <TableRow className="">
                         <TableHead className={`font-semibold text-base py-5 ${textPrimary} pl-6`}>S.ID</TableHead>
                         <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Title</TableHead>

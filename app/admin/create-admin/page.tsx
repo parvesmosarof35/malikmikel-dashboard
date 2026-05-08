@@ -266,6 +266,7 @@ export default function CreateAdminPage() {
       {/* Existing Admins List Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-bold text-primary mb-6">Existing Admins</h2>
+          <h2 className="text-xl font-bold text-primary mb-6">Existing Admins</h2>
           
           <div className="mb-6">
             <Table>
