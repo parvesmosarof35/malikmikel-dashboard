@@ -1,0 +1,463 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Trash2,
+  Edit,
+  DollarSign,
+  ImageIcon,
+  X,
+  AlertCircle,
+  RefreshCw,
+  Plus,
+  Calendar,
+  Search
+} from "lucide-react";
+import Image from "next/image";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { buttonbg, textPrimary } from "@/contexts/theme";
+import {
+  useGetAllOffersQuery,
+  useCreateOfferMutation,
+  useUpdateOfferMutation,
+  useDeleteOfferMutation,
+} from "@/store/api/offerApi";
+import { getImageUrl } from "@/store/config/envConfig";
+import { toast } from "sonner";
+import { Loader } from "@/components/ui/loader";
+import { useDebounce } from "@/store/hooks";
+
+// Types
+type ApiOffer = {
+  _id: string;
+  title: string;
+  description: string;
+  discount: number;
+  startTime: string;
+  endTime: string;
+  image: string | null;
+  status: "active" | "inactive";
+  createdAt: string;
+};
+
+type ModalMode = "create" | "edit";
+
+export default function OffersPage() {
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  
+  // RTK Query
+  const { data: offersResponse, isLoading, isError, refetch } = useGetAllOffersQuery({ 
+    searchTerm: debouncedSearchTerm 
+  });
+  const [createOffer, { isLoading: isCreating }] = useCreateOfferMutation();
+  const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
+  const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
+
+  const offers: ApiOffer[] = offersResponse?.data || [];
+
+  // State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<ModalMode>("create");
+  const [editingOffer, setEditingOffer] = useState<ApiOffer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ApiOffer | null>(null);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    discount: 0,
+    startTime: "",
+    endTime: "",
+    status: "active" as "active" | "inactive",
+    imageFile: null as File | null,
+    imagePreview: null as string | null
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) router.push("/auth");
+    else if (user?.role !== "admin") router.push("/");
+  }, [isAuthenticated, user, router]);
+
+  if (!user || user.role !== "admin") return null;
+
+  const handleOpenCreate = () => {
+    setModalMode("create");
+    setEditingOffer(null);
+    setFormData({
+      title: "",
+      description: "",
+      discount: 0,
+      startTime: "",
+      endTime: "",
+      status: "active",
+      imageFile: null,
+      imagePreview: null
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (offer: ApiOffer) => {
+    setModalMode("edit");
+    setEditingOffer(offer);
+    setFormData({
+      title: offer.title,
+      description: offer.description,
+      discount: offer.discount,
+      startTime: offer.startTime ? new Date(offer.startTime).toISOString().slice(0, 16) : "",
+      endTime: offer.endTime ? new Date(offer.endTime).toISOString().slice(0, 16) : "",
+      status: offer.status,
+      imageFile: null,
+      imagePreview: offer.image ? getImageUrl(offer.image) : null
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        imageFile: file,
+        imagePreview: URL.createObjectURL(file)
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const submitData = new FormData();
+    submitData.append("title", formData.title);
+    submitData.append("description", formData.description);
+    submitData.append("discount", formData.discount.toString());
+    submitData.append("startTime", new Date(formData.startTime).toISOString());
+    submitData.append("endTime", new Date(formData.endTime).toISOString());
+    submitData.append("status", formData.status);
+    
+    if (formData.imageFile) {
+      submitData.append("image", formData.imageFile);
+    }
+
+    try {
+      if (modalMode === "create") {
+        await createOffer(submitData).unwrap();
+        toast.success("Offer created successfully");
+      } else if (editingOffer) {
+        await updateOffer({ id: editingOffer._id, data: submitData }).unwrap();
+        toast.success("Offer updated successfully");
+      }
+      setIsModalOpen(false);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Something went wrong");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteOffer(deleteTarget._id).unwrap();
+      toast.success("Offer deleted successfully");
+      setDeleteTarget(null);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to delete offer");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-transparent p-6 space-y-6">
+      
+      {/* Header */}
+      <div className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}>
+        <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <DollarSign className="text-white w-6 h-6" />
+            </div>
+            <h2 className="text-white text-xl font-bold">Offer Management</h2>
+          </div>
+          
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" />
+            <input 
+              type="text"
+              placeholder="Search offers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-lg py-2 pl-10 pr-4 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+            />
+          </div>
+        </div>
+        <Button onClick={handleOpenCreate} className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold gap-2">
+          <Plus className="w-4 h-4" /> Add New Offer
+        </Button>
+      </div>
+
+      {/* Table Section */}
+      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden relative z-10 min-h-[500px]">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Loader className="w-10 h-10 animate-spin text-[#2E6F65]" />
+            <p className="mt-4 font-medium">Loading offers...</p>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-20 text-red-400">
+            <AlertCircle className="w-12 h-12" />
+            <p className="mt-4 font-medium">Failed to load offers</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-4 gap-2">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </Button>
+          </div>
+        ) : offers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <DollarSign className="w-16 h-16 opacity-20" />
+            <p className="mt-4 text-xl font-medium">No offers found</p>
+            <p className="text-sm">Create your first offer to get started</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50/50">
+                <TableRow className="border-b border-gray-100 hover:bg-transparent">
+                  <TableHead className="font-bold py-5 pl-8">#</TableHead>
+                  <TableHead className="font-bold py-5">Image</TableHead>
+                  <TableHead className="font-bold py-5">Title</TableHead>
+                  <TableHead className="font-bold py-5">Discount</TableHead>
+                  <TableHead className="font-bold py-5">Validity</TableHead>
+                  <TableHead className="font-bold py-5">Status</TableHead>
+                  <TableHead className="font-bold py-5 text-right pr-8">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {offers.map((offer, i) => (
+                  <TableRow key={offer._id} className="hover:bg-gray-50/80 transition-colors border-b border-gray-50 last:border-0 group">
+                    <TableCell className="font-medium text-gray-400 pl-8">{i + 1}</TableCell>
+                    <TableCell>
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-100">
+                        {offer.image ? (
+                          <Image src={getImageUrl(offer.image)} alt={offer.title} fill className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-900">{offer.title}</TableCell>
+                    <TableCell>
+                      <span className="px-3 py-1 rounded-full bg-green-50 text-[#2E6F65] font-bold text-xs border border-green-100">
+                        {offer.discount}% OFF
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col text-xs text-gray-500">
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(offer.startTime).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1 font-bold text-gray-400">to {new Date(offer.endTime).toLocaleDateString()}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        offer.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {offer.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right pr-8">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleOpenEdit(offer)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-[#2E6F65] hover:bg-green-50 transition-all"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => setDeleteTarget(offer)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200 my-auto">
+            <div className={`${buttonbg} rounded-t-2xl px-6 py-4 flex items-center justify-between`}>
+              <h2 className="text-white text-lg font-bold">
+                {modalMode === "create" ? "Add New Offer" : "Edit Offer"}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="grid md:grid-cols-2 gap-5">
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <Label>Offer Title</Label>
+                  <Input 
+                    placeholder="e.g. Summer Special" 
+                    value={formData.title}
+                    onChange={e => setFormData({...formData, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <Label>Discount Percentage (%)</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="20" 
+                    value={formData.discount}
+                    onChange={e => setFormData({...formData, discount: parseInt(e.target.value)})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Description</Label>
+                  <Textarea 
+                    placeholder="Describe the offer details..." 
+                    className="min-h-[80px]"
+                    value={formData.description}
+                    onChange={e => setFormData({...formData, description: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Input 
+                    type="datetime-local" 
+                    value={formData.startTime}
+                    onChange={e => setFormData({...formData, startTime: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Time</Label>
+                  <Input 
+                    type="datetime-local" 
+                    value={formData.endTime}
+                    onChange={e => setFormData({...formData, endTime: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <select 
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6F65]"
+                    value={formData.status}
+                    onChange={e => setFormData({...formData, status: e.target.value as "active" | "inactive"})}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Offer Image</Label>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative h-40 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#2E6F65] transition-all cursor-pointer overflow-hidden flex items-center justify-center bg-gray-50"
+                >
+                  {formData.imagePreview ? (
+                    <Image src={formData.imagePreview} alt="Preview" fill className="object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center text-gray-400">
+                      <ImageIcon className="w-10 h-10 mb-2" />
+                      <p className="text-sm font-medium">Click to upload banner</p>
+                    </div>
+                  )}
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 h-12 rounded-xl font-bold"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isCreating || isUpdating}
+                  className={`flex-1 h-12 rounded-xl font-bold ${buttonbg}`}
+                >
+                  {isCreating || isUpdating ? <div className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Processing...</div> : (modalMode === "create" ? "Create Offer" : "Save Changes")}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="bg-white rounded-2xl border-none">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold">Delete Offer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-bold text-gray-900">{deleteTarget?.title}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3">
+            <AlertDialogCancel className="h-12 rounded-xl font-bold">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="h-12 rounded-xl bg-red-500 hover:bg-red-600 font-bold text-white shadow-lg shadow-red-500/20"
+            >
+              {isDeleting ? <Loader className="w-5 h-5 animate-spin" /> : "Yes, Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+    </div>
+  );
+}

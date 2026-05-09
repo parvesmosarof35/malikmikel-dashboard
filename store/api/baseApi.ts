@@ -48,5 +48,6 @@ export const baseApi = createApi({
     "badge",
     "report",
     "admin",
+    "Offer",
   ],
 });

@@ -17,14 +17,12 @@ export const serviceApi = baseApi.injectEndpoints({
                 const params = new URLSearchParams();
                 if (page) params.append("page", page.toString());
                 if (limit) params.append("limit", limit.toString());
-                if (searchTerm) params.append("searchTerm", searchTerm);
-                if (category_id) params.append("category_id", category_id);
+                if (searchTerm) params.append("search", searchTerm);
+                if (category_id) params.append("cetagory", category_id);
                 if (type) params.append("type", type);
                 if (time) params.append("time", time);
                 if (instructor_id) params.append("instructor_id", instructor_id);
                 if (price) params.append("price", price);
-
-                if (category_id) params.append("cetagory", category_id);
 
                 return {
                     url: `service/all-services?${params.toString()}`,

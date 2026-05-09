@@ -40,12 +40,14 @@ import {
   AlertCircle,
   RefreshCw,
   Tag,
-  Plus
+  Plus,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { buttonbg, textPrimary } from "@/contexts/theme";
+import { useDebounce } from "@/store/hooks";
 import {
   useGetAllSubCategoriesQuery,
   useCreateSubCategoryMutation,
@@ -98,9 +100,16 @@ export default function SubCategoryPage() {
   // ── Pagination ────────────────────────────────────────────────────────────
   const [page, setPage] = useState(1);
   const limit = 10;
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // ── RTK Query ─────────────────────────────────────────────────────────────
-  const { data, isLoading, isError, refetch } = useGetAllSubCategoriesQuery({ page, limit });
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const { data, isLoading, isError, refetch } = useGetAllSubCategoriesQuery({ 
+    page, 
+    limit, 
+    category: selectedCategory,
+    searchTerm: debouncedSearchTerm
+  });
   const { data: categoryData } = useGetAllCategoriesQuery({ page: 1, limit: 100 });
   const [createSubCategory, { isLoading: isCreating }] = useCreateSubCategoryMutation();
   const [updateSubCategory, { isLoading: isUpdating }] = useUpdateSubCategoryMutation();
@@ -257,7 +266,36 @@ export default function SubCategoryPage() {
       <div
         className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}
       >
-        <h2 className="text-white text-xl font-bold">Sub-Categories</h2>
+        <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
+          <h2 className="text-white text-xl font-bold">Sub-Categories</h2>
+          
+          <div className="relative w-full sm:w-48">
+            <select 
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/30 transition-all appearance-none cursor-pointer"
+            >
+              <option value="" className="text-gray-900">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.name} className="text-gray-900">{cat.name}</option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/60">
+               <Tag className="w-3 h-3" />
+            </div>
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" />
+            <input 
+              type="text"
+              placeholder="Search sub-categories..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-lg py-2 pl-10 pr-4 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+            />
+          </div>
+        </div>
         <Button
           onClick={openCreate}
           className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold w-full md:w-auto"

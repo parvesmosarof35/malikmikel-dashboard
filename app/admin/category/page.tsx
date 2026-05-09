@@ -39,6 +39,7 @@ import {
   X,
   AlertCircle,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
@@ -53,6 +54,7 @@ import {
 import { getImageUrl } from "@/store/config/envConfig";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
+import { useDebounce } from "@/store/hooks";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ApiCategory = {
@@ -83,9 +85,15 @@ export default function CategoryPage() {
   // ── Pagination ────────────────────────────────────────────────────────────
   const [page, setPage] = useState(1);
   const limit = 10;
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // ── RTK Query ─────────────────────────────────────────────────────────────
-  const { data, isLoading, isError, refetch } = useGetAllCategoriesQuery({ page, limit });
+  const { data, isLoading, isError, refetch } = useGetAllCategoriesQuery({ 
+    page, 
+    limit,
+    searchTerm: debouncedSearchTerm 
+  });
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
@@ -221,7 +229,19 @@ export default function CategoryPage() {
       <div
         className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}
       >
-        <h2 className="text-white text-xl font-bold">Categories</h2>
+        <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
+          <h2 className="text-white text-xl font-bold">Categories</h2>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" />
+            <input 
+              type="text"
+              placeholder="Search categories..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-lg py-2 pl-10 pr-4 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+            />
+          </div>
+        </div>
         <Button
           onClick={openCreate}
           className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold w-full md:w-auto"

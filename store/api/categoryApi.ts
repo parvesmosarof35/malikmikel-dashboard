@@ -3,10 +3,14 @@ import { baseApi } from "./baseApi";
 export const categoryApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         getAllCategories: build.query({
-            query: ({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}) => ({
-                url: `cetagory/all-cetagory?page=${page}&limit=${limit}`,
-                method: "GET",
-            }),
+            query: ({ page = 1, limit = 10, searchTerm = "" }: { page?: number; limit?: number; searchTerm?: string } = {}) => {
+                let url = `cetagory/all-cetagory?page=${page}&limit=${limit}`;
+                if (searchTerm) url += `&searchTerm=${searchTerm}`;
+                return {
+                    url,
+                    method: "GET",
+                };
+            },
             providesTags: ["category"],
         }),
         createCategory: build.mutation({

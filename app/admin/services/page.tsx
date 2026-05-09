@@ -28,7 +28,8 @@ import {
   Upload,
   Calendar,
   Tag,
-  Eye
+  Eye,
+  Gift
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -50,6 +51,8 @@ import {
 } from "@/store/api/serviceApi";
 import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
 import { useGetAllSubCategoriesQuery } from "@/store/api/subCategoryApi";
+import { useGetAllOffersQuery } from "@/store/api/offerApi";
+import { useDebounce } from "@/store/hooks";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
@@ -81,15 +84,21 @@ export default function ServicesPage() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  
   const { data: servicesResponse, isLoading, refetch } = useGetAllServicesQuery({ 
     page: currentPage, 
     limit: 10,
-    searchTerm: searchTerm,
+    searchTerm: debouncedSearchTerm,
     category_id: selectedCategory
   });
   
   const [deleteService] = useDeleteServiceMutation();
   const [createService] = useCreateServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
+
+  const { data: categoriesResponse } = useGetAllCategoriesQuery({ limit: 100 });
+  const categoriesList = categoriesResponse?.data || [];
 
   const services = servicesResponse?.data || [];
   const meta = servicesResponse?.meta || { totalPage: 1, total: 0 };
@@ -149,8 +158,8 @@ export default function ServicesPage() {
                   className="w-full bg-white/10 border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/30 transition-all appearance-none cursor-pointer"
                 >
                   <option value="" className="text-gray-900">All Categories</option>
-                  {["Restaurants", "Excursions", "Events"].map(cat => (
-                    <option key={cat} value={cat} className="text-gray-900">{cat}</option>
+                  {categoriesList.map((cat: any) => (
+                    <option key={cat._id} value={cat.name} className="text-gray-900">{cat.name}</option>
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/60">
@@ -512,6 +521,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
   });
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState("");
   const { data: categoriesResponse } = useGetAllCategoriesQuery({ limit: 100 });
   const categories = categoriesResponse?.data || [];
   
@@ -520,6 +530,10 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
     { skip: !selectedCategoryName }
   );
   const subCategories = subCategoriesResponse?.data || [];
+  
+  const { data: offersResponse } = useGetAllOffersQuery({});
+  const offers = offersResponse?.data || [];
+  const [selectedOfferId, setSelectedOfferId] = useState("");
   
   const [createService] = useCreateServiceMutation();
   const [updateService] = useUpdateServiceMutation();
@@ -544,6 +558,8 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
         });
         setSelectedCategoryId(serviceToEdit.cetagory?._id || "");
         setSelectedCategoryName(serviceToEdit.cetagory?.name || "");
+        setSelectedSubCategoryId(serviceToEdit.subCetagory?._id || "");
+        setSelectedOfferId(serviceToEdit.offer?._id || "");
         
         setPreviews({
           main: serviceToEdit.image ? getImageUrl(serviceToEdit.image) : null,
@@ -558,6 +574,8 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
         setPlaceData({ rating: 0, totalReviews: 0, reviews: [] });
         setSelectedCategoryId("");
         setSelectedCategoryName("");
+        setSelectedSubCategoryId("");
+        setSelectedOfferId("");
         setPreviews({ main: null, visitors: [], menu: [] });
       }
     }
@@ -664,6 +682,12 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
         
         if (placeData.reviews.length > 0 && typeof placeData.reviews[0] === 'object') {
             formData.append("reviews", JSON.stringify(placeData.reviews));
+        }
+
+        if (selectedOfferId) {
+            formData.set("offer", selectedOfferId);
+        } else {
+            formData.delete("offer");
         }
         
         if (serviceToEdit) {
@@ -792,7 +816,8 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                     <select 
                         name="subCetagory" 
                         required 
-                        defaultValue={serviceToEdit?.subCetagory?._id || ""}
+                        value={selectedSubCategoryId}
+                        onChange={(e) => setSelectedSubCategoryId(e.target.value)}
                         className="w-full h-12 rounded-xl border border-gray-200 px-4 focus:ring-2 focus:ring-[#2E6F65] focus:outline-none transition-all disabled:opacity-50 disabled:bg-gray-50"
                         disabled={!selectedCategoryId}
                     >
@@ -945,23 +970,33 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                      </>
                    )}
                </div>
-               
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                   <div className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
-                       <div className="space-y-0.5">
-                           <p className="font-bold text-gray-800">Special Offer</p>
-                           <p className="text-xs text-gray-500">Enable discounts</p>
-                       </div>
-                       <Switch name="offer" defaultChecked={serviceToEdit?.offer} className="data-[state=checked]:bg-[#2E6F65]" />
-                   </div>
-                   <div className="md:col-span-2 space-y-2">
-                        <Label className="font-bold text-gray-700">Offer Details</Label>
-                        <Input name="offerType" defaultValue={serviceToEdit?.offerType || ""} placeholder="e.g. 20% OFF on Weekend stays" className="h-12 rounded-xl" />
-                   </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="flex items-center gap-3 border-b border-gray-100 pb-3 md:col-span-2">
+                        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+                            <Gift className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800">Special Offer</h3>
+                    </div>
 
-                   
+                    <div className="md:col-span-2 space-y-2">
+                        <Label className="font-bold text-gray-700">Select Active Offer</Label>
+                        <select 
+                            name="offer" 
+                            value={selectedOfferId}
+                            onChange={(e) => setSelectedOfferId(e.target.value)}
+                            className="w-full h-12 rounded-xl border border-gray-200 px-4 focus:ring-2 focus:ring-[#2E6F65] focus:outline-none transition-all"
+                        >
+                            <option value="">No Active Offer</option>
+                            {offers.map((off: any) => (
+                                <option key={off._id} value={off._id}>
+                                    {off.title} ({off.discount}% OFF)
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-500 italic">Select an offer to apply it to this service. Choose "No Active Offer" to disable.</p>
+                    </div>
+                </div>              
                </div>
-           </div>
 
            {/* Section: Additional Stats (Placeholders for manual entry if needed) */}
            <div className="space-y-6 pt-4 border-t border-gray-100">
