@@ -673,28 +673,83 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
     }
   };
 
+  const formatTimeToAMPM = (timeStr: any) => {
+    if (!timeStr || typeof timeStr !== 'string') return timeStr;
+    if (!timeStr.includes(':')) return timeStr;
+    
+    const [hours, minutes] = timeStr.split(':');
+    let h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    return `${h.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const mainFormData = new FormData(form);
+        const requestFormData = new FormData();
         
-        if (placeData.reviews.length > 0 && typeof placeData.reviews[0] === 'object') {
-            formData.append("reviews", JSON.stringify(placeData.reviews));
+        // Construct the data object for all text fields
+        const data: any = {
+            name: mainFormData.get("name"),
+            description: mainFormData.get("description"),
+            cetagory: mainFormData.get("cetagory"),
+            subCetagory: mainFormData.get("subCetagory"),
+            address: mainFormData.get("address"),
+            latitude: mainFormData.get("latitude"),
+            longitude: mainFormData.get("longitude"),
+            openTime: formatTimeToAMPM(mainFormData.get("openTime")),
+            closeTime: formatTimeToAMPM(mainFormData.get("closeTime")),
+            startTime: formatTimeToAMPM(mainFormData.get("startTime")),
+            endTime: formatTimeToAMPM(mainFormData.get("endTime")),
+            date: mainFormData.get("date"),
+        };
+
+        // Add offer if selected
+        if (selectedOfferId) {
+            data.offer = selectedOfferId;
         }
 
-        if (selectedOfferId) {
-            formData.set("offer", selectedOfferId);
-        } else {
-            formData.delete("offer");
+        // Add reviews and ratings if available
+        if (placeData.reviews.length > 0) {
+            data.reviews = placeData.reviews;
         }
+        data.averageRating = Number(mainFormData.get("averageRating")) || 0;
+        data.totalReviews = Number(mainFormData.get("totalReviews")) || 0;
+
+        // Append the JSON data string
+        requestFormData.append("data", JSON.stringify(data));
+        
+        // Append files separately
+        const imageFile = mainFormData.get("image") as File;
+        if (imageFile && imageFile.size > 0) {
+            requestFormData.append("image", imageFile);
+        }
+
+        const visitorFiles = mainFormData.getAll("photoOfVisitor") as File[];
+        visitorFiles.forEach(file => {
+            if (file && file.size > 0) {
+                requestFormData.append("photoOfVisitor", file);
+            }
+        });
+
+        const menuFiles = mainFormData.getAll("hotelMenu") as File[];
+        menuFiles.forEach(file => {
+            if (file && file.size > 0) {
+                requestFormData.append("hotelMenu", file);
+            }
+        });
         
         if (serviceToEdit) {
-            await updateService({ id: serviceToEdit._id, formData }).unwrap();
+            await updateService({ id: serviceToEdit._id, formData: requestFormData }).unwrap();
             toast.success("Service updated successfully!");
         } else {
-            await createService(formData).unwrap();
+            await createService(requestFormData).unwrap();
             toast.success("Service created successfully!");
         }
         onSuccess();
