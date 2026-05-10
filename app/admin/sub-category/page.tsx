@@ -143,7 +143,7 @@ export default function SubCategoryPage() {
   const subCategories: ApiSubCategory[] = data?.data ?? [];
   const categories: ParentCategory[] = categoryData?.data ?? [];
   const meta = data?.meta;
-  const totalPages = meta?.totalPage ?? 1;
+  const totalPages = meta?.totalPages || meta?.totalPage || 1;
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function openCreate() {

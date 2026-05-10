@@ -123,7 +123,7 @@ export default function CategoryPage() {
   // ── Derived ───────────────────────────────────────────────────────────────
   const categories: ApiCategory[] = data?.data ?? [];
   const meta = data?.meta;
-  const totalPages = meta?.totalPage ?? 1;
+  const totalPages = meta?.totalPages || meta?.totalPage || 1;
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function openCreate() {

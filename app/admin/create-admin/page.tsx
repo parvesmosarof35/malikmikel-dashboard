@@ -53,7 +53,8 @@ export default function CreateAdminPage() {
   const [deleteAdmin] = useDeleteAdminMutation();
 
   const admins = adminsResponse?.data || [];
-  const meta = adminsResponse?.meta || { totalPage: 1, total: 0 };
+  const meta = adminsResponse?.meta || { totalPages: 1, total: 0 };
+  const totalPages = meta.totalPages || meta.totalPage || 1;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -330,7 +331,7 @@ export default function CreateAdminPage() {
                             </button>
                         </PaginationItem>
                         
-                        {Array.from({ length: meta.totalPage || 1 }, (_, i) => i + 1).map((page) => (
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                             <PaginationItem key={page}>
                                 <button 
                                     onClick={() => setCurrentPage(page)}
@@ -347,8 +348,8 @@ export default function CreateAdminPage() {
 
                         <PaginationItem>
                             <button 
-                                onClick={() => setCurrentPage(prev => Math.min(meta.totalPage || 1, prev + 1))}
-                                disabled={currentPage === (meta.totalPage || 1)}
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
                                 className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-[#2E6F65] disabled:opacity-30 transition-colors"
                             >
                                 <PaginationNext className="p-0 h-auto hover:bg-transparent" />

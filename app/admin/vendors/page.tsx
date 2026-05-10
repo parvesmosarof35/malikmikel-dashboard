@@ -194,7 +194,8 @@ export default function VendorsPage() {
   const [createVendor] = useCreateVendorMutation();
 
   const vendors = vendorsResponse?.data || [];
-  const meta = vendorsResponse?.meta || { totalPage: 1, total: 0 };
+  const meta = vendorsResponse?.meta || { totalPages: 1, total: 0 };
+  const totalPages = meta.totalPages || meta.totalPage || 1;
 
   const handleDeleteVendor = async (id: string) => {
     try {
@@ -310,7 +311,7 @@ export default function VendorsPage() {
                             </button>
                         </PaginationItem>
                         
-                        {Array.from({ length: meta.totalPage }, (_, i) => i + 1).map((page) => (
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                             <PaginationItem key={page}>
                                 <button 
                                     onClick={() => setCurrentPage(page)}
@@ -327,8 +328,8 @@ export default function VendorsPage() {
 
                         <PaginationItem>
                             <button 
-                                onClick={() => setCurrentPage(prev => Math.min(meta.totalPage, prev + 1))}
-                                disabled={currentPage === meta.totalPage}
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
                                 className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-[#2E6F65] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <PaginationNext className="hover:bg-transparent p-0 h-auto" />

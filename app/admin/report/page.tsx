@@ -124,11 +124,12 @@ export default function ReportPage() {
 
   const reports = reportResponse?.data || [];
   const meta = reportResponse?.meta || { 
-    totalPage: 1, 
+    totalPages: 1, 
     total: 0, 
     pendingReports: 0, 
     completedReports: 0 
   };
+  const totalPages = meta.totalPages || meta.totalPage || 1;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -283,7 +284,7 @@ export default function ReportPage() {
                         </button>
                     </PaginationItem>
                     
-                    {Array.from({ length: meta.totalPage }, (_, i) => i + 1).map((page) => (
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <PaginationItem key={page}>
                             <button 
                                 onClick={() => setCurrentPage(page)}
@@ -300,8 +301,8 @@ export default function ReportPage() {
 
                     <PaginationItem>
                         <button 
-                            onClick={() => setCurrentPage(prev => Math.min(meta.totalPage, prev + 1))}
-                            disabled={currentPage === meta.totalPage}
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
                             className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-[#2E6F65] disabled:opacity-30 transition-colors"
                         >
                             <PaginationNext className="p-0 h-auto hover:bg-transparent" />

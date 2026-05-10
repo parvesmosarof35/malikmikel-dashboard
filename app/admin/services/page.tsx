@@ -101,7 +101,8 @@ export default function ServicesPage() {
   const categoriesList = categoriesResponse?.data || [];
 
   const services = servicesResponse?.data || [];
-  const meta = servicesResponse?.meta || { totalPage: 1, total: 0 };
+  const meta = servicesResponse?.meta || { totalPages: 1, total: 0 };
+  const totalPages = meta.totalPages || meta.totalPage || 1;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -290,7 +291,7 @@ export default function ServicesPage() {
                         </button>
                     </PaginationItem>
                     
-                    {Array.from({ length: meta.totalPage || 1 }, (_, i) => i + 1).map((page) => (
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <PaginationItem key={page}>
                             <button 
                                 onClick={() => setCurrentPage(page)}
@@ -307,8 +308,8 @@ export default function ServicesPage() {
 
                     <PaginationItem>
                         <button 
-                            onClick={() => setCurrentPage(prev => Math.min(meta.totalPage || 1, prev + 1))}
-                            disabled={currentPage === meta.totalPage || meta.totalPage === 0}
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages || totalPages === 0}
                             className="flex items-center gap-1 px-4 py-2 rounded-lg text-gray-500 hover:text-[#2E6F65] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium"
                         >
                             <PaginationNext className="hover:bg-transparent p-0 h-auto" />
