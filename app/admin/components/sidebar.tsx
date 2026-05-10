@@ -20,6 +20,7 @@ import {
     MessageSquare,
     HelpCircle,
     Award,
+    Star,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -70,6 +71,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { name: "Services",        path: "/admin/services",        icon: Luggage },
     { name: "Faq",             path: "/admin/faq",             icon: HelpCircle },
     { name: "Report",          path: "/admin/report",          icon: BarChart },
+    { name: "Reviews",         path: "/admin/review",          icon: Star },
     { name: "Create Admin",    path: "/admin/create-admin",    icon: ShieldCheck },
     { name: "Settings",        path: "/admin/settings",        icon: Settings },
   ];
