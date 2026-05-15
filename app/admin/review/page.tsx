@@ -35,6 +35,8 @@ import {
   RefreshCw,
   Search,
   MessageSquare,
+  Eye,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
@@ -48,6 +50,7 @@ import { getImageUrl } from "@/store/config/envConfig";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
 import { useDebounce } from "@/store/hooks";
+import { Badge } from "@/components/ui/badge";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ApiReview = {
@@ -62,9 +65,12 @@ type ApiReview = {
   userId: {
     _id: string;
     email: string;
+    image?: string;
   };
   RettingType: string;
   isDeleted: boolean;
+  isReport: boolean;
+  reportReason: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -95,8 +101,9 @@ export default function ReviewPage() {
   });
   const [deleteReview, { isLoading: isDeleting }] = useDeleteReviewMutation();
 
-  // ── Delete confirmation ───────────────────────────────────────────────────
+  // ── Popups ─────────────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<ApiReview | null>(null);
+  const [reportTarget, setReportTarget] = useState<ApiReview | null>(null);
 
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,6 +219,7 @@ export default function ReviewPage() {
                     <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Service</TableHead>
                     <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Rating</TableHead>
                     <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Comment</TableHead>
+                    <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Report Status</TableHead>
                     <TableHead className={`font-semibold text-base py-5 ${textPrimary}`}>Date</TableHead>
                     <TableHead className={`font-semibold text-base py-5 ${textPrimary} text-right pr-6`}>Action</TableHead>
                   </TableRow>
@@ -254,6 +262,24 @@ export default function ReviewPage() {
                       </TableCell>
                       <TableCell className="text-gray-500 py-4 max-w-[250px] truncate">
                         {review.comment}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {review.isReport ? (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="destructive" className="px-2 py-0.5 text-[10px] uppercase tracking-wider">
+                              Reported
+                            </Badge>
+                            <button
+                              onClick={() => setReportTarget(review)}
+                              className="text-gray-400 hover:text-[#2E6F65] transition-colors"
+                              title="View Report Reason"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-gray-500 py-4 text-sm">{formatDate(review.createdAt)}</TableCell>
                       <TableCell className="py-4 pr-6">
@@ -337,6 +363,38 @@ export default function ReviewPage() {
                   <Loader className="w-4 h-4 animate-spin" /> Deleting…
                 </span>
               ) : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* ── Report Reason Dialog ────────────────────────────────────────── */}
+      <AlertDialog open={!!reportTarget} onOpenChange={(open) => !open && setReportTarget(null)}>
+        <AlertDialogContent className="bg-white max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <AlertDialogTitle className="text-xl">Report Detail</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-700 italic">
+              "{reportTarget?.reportReason || "No reason provided."}"
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-4 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Reported User:</span>
+              <span className="font-medium text-gray-900">{reportTarget?.userId?.email}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Service:</span>
+              <span className="font-medium text-gray-900">{reportTarget?.serviceId?.name}</span>
+            </div>
+          </div>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogAction className="bg-[#2E6F65] hover:bg-[#2E6F65]/90 text-white w-full sm:w-auto">
+              Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
