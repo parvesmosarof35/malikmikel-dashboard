@@ -242,12 +242,6 @@ export default function CategoryPage() {
             />
           </div>
         </div>
-        <Button
-          onClick={openCreate}
-          className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold w-full md:w-auto"
-        >
-          + Add Category
-        </Button>
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────────────── */}
@@ -313,13 +307,6 @@ export default function CategoryPage() {
                       <TableCell className="text-gray-500 py-4 text-sm">{formatDate(cat.createdAt)}</TableCell>
                       <TableCell className="py-4 pr-6">
                         <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => setDeleteTarget(cat)}
-                            className="text-red-400 hover:text-red-600 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
                           <button
                             onClick={() => openEdit(cat)}
                             className="text-gray-500 hover:text-gray-800 transition-colors"
@@ -433,7 +420,13 @@ export default function CategoryPage() {
                   placeholder="e.g. Restaurants"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  disabled={modalMode === "edit"}
                 />
+                {modalMode === "edit" && (
+                  <p className="text-xs text-amber-600 font-medium">
+                    Category name cannot be changed to ensure consistency across the application.
+                  </p>
+                )}
               </div>
 
               {/* Description */}

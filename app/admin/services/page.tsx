@@ -29,7 +29,8 @@ import {
   Calendar,
   Tag,
   Eye,
-  Gift
+  Gift,
+  Globe
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -428,6 +429,14 @@ const ViewServiceModal = ({ isOpen, onClose, service }: { isOpen: boolean; onClo
                                 <Star className="w-5 h-5 text-yellow-500 fill-current shrink-0" />
                                 <span><span className="font-bold text-gray-900">{service.averageRating?.toFixed(1) || "0.0"}</span> ({service.totalReviews || 0} reviews)</span>
                             </p>
+                            {service.serviceLink && (
+                              <p className="flex items-center gap-3 text-sm text-gray-700">
+                                  <Globe className="w-5 h-5 text-gray-400 shrink-0" />
+                                  <a href={service.serviceLink.startsWith('http') ? service.serviceLink : `https://${service.serviceLink}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                      {service.serviceLink}
+                                  </a>
+                              </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -514,6 +523,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
 
   const [location, setLocation] = useState({ address: "", lat: "", lng: "" });
   const [hotelName, setHotelName] = useState("");
+  const [serviceLink, setServiceLink] = useState("");
   const [operatingHours, setOperatingHours] = useState({ open: "", close: "" });
   const [placeData, setPlaceData] = useState<{ rating: number; totalReviews: number; reviews: any[] }>({
     rating: 0,
@@ -543,6 +553,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
     if (isOpen) {
       if (serviceToEdit) {
         setHotelName(serviceToEdit.name || "");
+        setServiceLink(serviceToEdit.serviceLink || "");
         setLocation({
           address: serviceToEdit.address || "",
           lat: serviceToEdit.latitude || "",
@@ -570,6 +581,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
       } else {
         // Reset states for create mode
         setHotelName("");
+        setServiceLink("");
         setLocation({ address: "", lat: "", lng: "" });
         setOperatingHours({ open: "", close: "" });
         setPlaceData({ rating: 0, totalReviews: 0, reviews: [] });
@@ -698,6 +710,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
         // Construct the data object for all text fields
         const data: any = {
             name: mainFormData.get("name"),
+            serviceLink: mainFormData.get("serviceLink"),
             description: mainFormData.get("description"),
             cetagory: mainFormData.get("cetagory"),
             subCetagory: mainFormData.get("subCetagory"),
@@ -834,17 +847,27 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label className="font-bold text-gray-700">Service Name</Label>
-                    <Input 
-                        name="name" 
-                        required 
-                        placeholder="Grand Royal Hotel" 
-                        value={hotelName}
-                        onChange={(e) => setHotelName(e.target.value)}
-                        className="h-12 rounded-xl focus:ring-[#2E6F65] border-gray-200"
-                    />
-                  </div>
+                   <div className="space-y-2">
+                     <Label className="font-bold text-gray-700">Service Name</Label>
+                     <Input 
+                         name="name" 
+                         required 
+                         placeholder="Grand Royal Hotel" 
+                         value={hotelName}
+                         onChange={(e) => setHotelName(e.target.value)}
+                         className="h-12 rounded-xl focus:ring-[#2E6F65] border-gray-200"
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="font-bold text-gray-700">Service Link</Label>
+                     <Input 
+                         name="serviceLink" 
+                         placeholder="www.exampleservice.com" 
+                         value={serviceLink}
+                         onChange={(e) => setServiceLink(e.target.value)}
+                         className="h-12 rounded-xl focus:ring-[#2E6F65] border-gray-200"
+                     />
+                   </div>
                   <div className="space-y-2">
                       <Label className="font-bold text-gray-700">Category</Label>
                       <select 
