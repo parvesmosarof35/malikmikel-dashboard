@@ -33,7 +33,7 @@ import {
   RefreshCw,
   Plus,
   Calendar,
-  Search
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
@@ -45,6 +45,7 @@ import {
   useUpdateOfferMutation,
   useDeleteOfferMutation,
 } from "@/store/api/offerApi";
+import { useGetAllCategoriesQuery } from "@/store/api/categoryApi";
 import { getImageUrl } from "@/store/config/envConfig";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
@@ -53,9 +54,15 @@ import { useDebounce } from "@/store/hooks";
 // Types
 type ApiOffer = {
   _id: string;
+  cetagory?: {
+    _id: string;
+    name: string;
+  };
   title: string;
   description: string;
   discount: number;
+  promocode?: string;
+  serviceLink?: string;
   startTime: string;
   endTime: string;
   image: string | null;
@@ -72,11 +79,18 @@ export default function OffersPage() {
   // Search
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  
+
   // RTK Query
-  const { data: offersResponse, isLoading, isError, refetch } = useGetAllOffersQuery({ 
-    searchTerm: debouncedSearchTerm 
+  const {
+    data: offersResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAllOffersQuery({
+    searchTerm: debouncedSearchTerm,
   });
+  const { data: categoriesResponse } = useGetAllCategoriesQuery({ limit: 100 });
+  const categories = categoriesResponse?.data || [];
   const [createOffer, { isLoading: isCreating }] = useCreateOfferMutation();
   const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
   const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
@@ -91,14 +105,17 @@ export default function OffersPage() {
 
   // Form State
   const [formData, setFormData] = useState({
+    cetagory: "",
     title: "",
     description: "",
     discount: 0,
+    promocode: "",
+    serviceLink: "",
     startTime: "",
     endTime: "",
     status: "active" as "active" | "inactive",
     imageFile: null as File | null,
-    imagePreview: null as string | null
+    imagePreview: null as string | null,
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,14 +131,17 @@ export default function OffersPage() {
     setModalMode("create");
     setEditingOffer(null);
     setFormData({
+      cetagory: "",
       title: "",
       description: "",
       discount: 0,
+      promocode: "",
+      serviceLink: "",
       startTime: "",
       endTime: "",
       status: "active",
       imageFile: null,
-      imagePreview: null
+      imagePreview: null,
     });
     setIsModalOpen(true);
   };
@@ -130,14 +150,21 @@ export default function OffersPage() {
     setModalMode("edit");
     setEditingOffer(offer);
     setFormData({
+      cetagory: offer.cetagory?._id || "",
       title: offer.title,
       description: offer.description,
       discount: offer.discount,
-      startTime: offer.startTime ? new Date(offer.startTime).toISOString().slice(0, 16) : "",
-      endTime: offer.endTime ? new Date(offer.endTime).toISOString().slice(0, 16) : "",
+      promocode: offer.promocode || "",
+      serviceLink: offer.serviceLink || "",
+      startTime: offer.startTime
+        ? new Date(offer.startTime).toISOString().slice(0, 16)
+        : "",
+      endTime: offer.endTime
+        ? new Date(offer.endTime).toISOString().slice(0, 16)
+        : "",
       status: offer.status,
       imageFile: null,
-      imagePreview: offer.image ? getImageUrl(offer.image) : null
+      imagePreview: offer.image ? getImageUrl(offer.image) : null,
     });
     setIsModalOpen(true);
   };
@@ -145,25 +172,29 @@ export default function OffersPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         imageFile: file,
-        imagePreview: URL.createObjectURL(file)
+        imagePreview: URL.createObjectURL(file),
       }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = new FormData();
+    if (formData.cetagory) submitData.append("cetagory", formData.cetagory);
     submitData.append("title", formData.title);
     submitData.append("description", formData.description);
     submitData.append("discount", formData.discount.toString());
+    if (formData.promocode) submitData.append("promocode", formData.promocode);
+    if (formData.serviceLink)
+      submitData.append("serviceLink", formData.serviceLink);
     submitData.append("startTime", new Date(formData.startTime).toISOString());
     submitData.append("endTime", new Date(formData.endTime).toISOString());
     submitData.append("status", formData.status);
-    
+
     if (formData.imageFile) {
       submitData.append("image", formData.imageFile);
     }
@@ -195,9 +226,10 @@ export default function OffersPage() {
 
   return (
     <div className="min-h-screen bg-transparent p-6 space-y-6">
-      
       {/* Header */}
-      <div className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}>
+      <div
+        className={`${buttonbg} rounded-t-xl p-4 px-6 flex flex-col md:flex-row items-center justify-between gap-4`}
+      >
         <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-lg">
@@ -205,10 +237,10 @@ export default function OffersPage() {
             </div>
             <h2 className="text-white text-xl font-bold">Offer Management</h2>
           </div>
-          
+
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" />
-            <input 
+            <input
               type="text"
               placeholder="Search offers..."
               value={searchTerm}
@@ -217,7 +249,10 @@ export default function OffersPage() {
             />
           </div>
         </div>
-        <Button onClick={handleOpenCreate} className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold gap-2">
+        <Button
+          onClick={handleOpenCreate}
+          className="bg-white text-[#2E6F65] hover:bg-white/90 font-bold gap-2"
+        >
           <Plus className="w-4 h-4" /> Add New Offer
         </Button>
       </div>
@@ -233,7 +268,12 @@ export default function OffersPage() {
           <div className="flex flex-col items-center justify-center py-20 text-red-400">
             <AlertCircle className="w-12 h-12" />
             <p className="mt-4 font-medium">Failed to load offers</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-4 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="mt-4 gap-2"
+            >
               <RefreshCw className="w-4 h-4" /> Retry
             </Button>
           </div>
@@ -254,17 +294,29 @@ export default function OffersPage() {
                   <TableHead className="font-bold py-5">Discount</TableHead>
                   <TableHead className="font-bold py-5">Validity</TableHead>
                   <TableHead className="font-bold py-5">Status</TableHead>
-                  <TableHead className="font-bold py-5 text-right pr-8">Actions</TableHead>
+                  <TableHead className="font-bold py-5 text-right pr-8">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {offers.map((offer, i) => (
-                  <TableRow key={offer._id} className="hover:bg-gray-50/80 transition-colors border-b border-gray-50 last:border-0 group">
-                    <TableCell className="font-medium text-gray-400 pl-8">{i + 1}</TableCell>
+                  <TableRow
+                    key={offer._id}
+                    className="hover:bg-gray-50/80 transition-colors border-b border-gray-50 last:border-0 group"
+                  >
+                    <TableCell className="font-medium text-gray-400 pl-8">
+                      {i + 1}
+                    </TableCell>
                     <TableCell>
                       <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-100">
                         {offer.image ? (
-                          <Image src={getImageUrl(offer.image)} alt={offer.title} fill className="object-cover" />
+                          <Image
+                            src={getImageUrl(offer.image)}
+                            alt={offer.title}
+                            fill
+                            className="object-cover"
+                          />
                         ) : (
                           <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
                             <ImageIcon className="w-5 h-5" />
@@ -272,7 +324,9 @@ export default function OffersPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-bold text-gray-900">{offer.title}</TableCell>
+                    <TableCell className="font-bold text-gray-900">
+                      {offer.title}
+                    </TableCell>
                     <TableCell>
                       <span className="px-3 py-1 rounded-full bg-green-50 text-[#2E6F65] font-bold text-xs border border-green-100">
                         {offer.discount}% OFF
@@ -280,26 +334,35 @@ export default function OffersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(offer.startTime).toLocaleDateString()}</span>
-                        <span className="flex items-center gap-1 font-bold text-gray-400">to {new Date(offer.endTime).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />{" "}
+                          {new Date(offer.startTime).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1 font-bold text-gray-400">
+                          to {new Date(offer.endTime).toLocaleDateString()}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        offer.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                      }`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          offer.status === "active"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
                         {offer.status}
                       </span>
                     </TableCell>
                     <TableCell className="text-right pr-8">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={() => handleOpenEdit(offer)}
                           className="p-2 rounded-lg text-gray-400 hover:text-[#2E6F65] hover:bg-green-50 transition-all"
                         >
                           <Edit className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => setDeleteTarget(offer)}
                           className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
                         >
@@ -319,11 +382,16 @@ export default function OffersPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200 my-auto">
-            <div className={`${buttonbg} rounded-t-2xl px-6 py-4 flex items-center justify-between`}>
+            <div
+              className={`${buttonbg} rounded-t-2xl px-6 py-4 flex items-center justify-between`}
+            >
               <h2 className="text-white text-lg font-bold">
                 {modalMode === "create" ? "Add New Offer" : "Edit Offer"}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-white/80 hover:text-white transition-colors">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -331,58 +399,113 @@ export default function OffersPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="space-y-2 col-span-2 md:col-span-1">
+                  <Label>Category</Label>
+                  <select
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6F65]"
+                    value={formData.cetagory}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cetagory: e.target.value })
+                    }
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((cat: any) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2 md:col-span-1">
                   <Label>Offer Title</Label>
-                  <Input 
-                    placeholder="e.g. Summer Special" 
+                  <Input
+                    placeholder="e.g. Summer Special"
                     value={formData.title}
-                    onChange={e => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <Label>Discount Percentage (%)</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="20" 
+                  <Input
+                    type="number"
+                    placeholder="20"
                     value={formData.discount}
-                    onChange={e => setFormData({...formData, discount: parseInt(e.target.value)})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        discount: parseInt(e.target.value),
+                      })
+                    }
                     required
+                  />
+                </div>
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <Label>Promo Code</Label>
+                  <Input
+                    placeholder="e.g. SUMMER20"
+                    value={formData.promocode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, promocode: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Service Link</Label>
+                  <Input
+                    placeholder="e.g. https://example.com/offer"
+                    value={formData.serviceLink}
+                    onChange={(e) =>
+                      setFormData({ ...formData, serviceLink: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2 col-span-2">
                   <Label>Description</Label>
-                  <Textarea 
-                    placeholder="Describe the offer details..." 
+                  <Textarea
+                    placeholder="Describe the offer details..."
                     className="min-h-[80px]"
                     value={formData.description}
-                    onChange={e => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Start Time</Label>
-                  <Input 
-                    type="datetime-local" 
+                  <Input
+                    type="datetime-local"
                     value={formData.startTime}
-                    onChange={e => setFormData({...formData, startTime: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startTime: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>End Time</Label>
-                  <Input 
-                    type="datetime-local" 
+                  <Input
+                    type="datetime-local"
                     value={formData.endTime}
-                    onChange={e => setFormData({...formData, endTime: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endTime: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <select 
+                  <select
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6F65]"
                     value={formData.status}
-                    onChange={e => setFormData({...formData, status: e.target.value as "active" | "inactive"})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        status: e.target.value as "active" | "inactive",
+                      })
+                    }
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -392,43 +515,58 @@ export default function OffersPage() {
 
               <div className="space-y-2">
                 <Label>Offer Image</Label>
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
                   className="relative h-40 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#2E6F65] transition-all cursor-pointer overflow-hidden flex items-center justify-center bg-gray-50"
                 >
                   {formData.imagePreview ? (
-                    <Image src={formData.imagePreview} alt="Preview" fill className="object-cover" />
+                    <Image
+                      src={formData.imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="flex flex-col items-center text-gray-400">
                       <ImageIcon className="w-10 h-10 mb-2" />
-                      <p className="text-sm font-medium">Click to upload banner</p>
+                      <p className="text-sm font-medium">
+                        Click to upload banner
+                      </p>
                     </div>
                   )}
                 </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
                   accept="image/*"
                   onChange={handleImageChange}
                 />
               </div>
 
               <div className="flex gap-4 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 h-12 rounded-xl font-bold"
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isCreating || isUpdating}
                   className={`flex-1 h-12 rounded-xl font-bold ${buttonbg}`}
                 >
-                  {isCreating || isUpdating ? <div className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Processing...</div> : (modalMode === "create" ? "Create Offer" : "Save Changes")}
+                  {isCreating || isUpdating ? (
+                    <div className="flex items-center gap-2">
+                      <Loader className="w-4 h-4 animate-spin" /> Processing...
+                    </div>
+                  ) : modalMode === "create" ? (
+                    "Create Offer"
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </div>
             </form>
@@ -437,27 +575,41 @@ export default function OffersPage() {
       )}
 
       {/* Delete Dialog */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent className="bg-white rounded-2xl border-none">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">Delete Offer?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold">
+              Delete Offer?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <span className="font-bold text-gray-900">{deleteTarget?.title}</span>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <span className="font-bold text-gray-900">
+                {deleteTarget?.title}
+              </span>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-3">
-            <AlertDialogCancel className="h-12 rounded-xl font-bold">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel className="h-12 rounded-xl font-bold">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="h-12 rounded-xl bg-red-500 hover:bg-red-600 font-bold text-white shadow-lg shadow-red-500/20"
             >
-              {isDeleting ? <Loader className="w-5 h-5 animate-spin" /> : "Yes, Delete"}
+              {isDeleting ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                "Yes, Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }

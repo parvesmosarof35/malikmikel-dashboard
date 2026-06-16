@@ -1068,7 +1068,7 @@ const AddServiceModal = ({ isOpen, onClose, onSuccess, serviceToEdit }: { isOpen
                             <option value="">No Active Offer</option>
                             {offers.map((off: any) => (
                                 <option key={off._id} value={off._id}>
-                                    {off.title} ({off.discount}% OFF)
+                                    {off.title} {off.cetagory?.name ? `(${off.cetagory.name})` : ''} - {off.discount}% OFF
                                 </option>
                             ))}
                         </select>
