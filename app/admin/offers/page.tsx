@@ -58,13 +58,14 @@ type ApiOffer = {
     _id: string;
     name: string;
   };
+  offerCetagory?: "Hotel" | "Transport" | "Others";
   title: string;
   description: string;
   discount: number;
   promocode?: string;
   serviceLink?: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   image: string | null;
   status: "active" | "inactive";
   createdAt: string;
@@ -106,6 +107,7 @@ export default function OffersPage() {
   // Form State
   const [formData, setFormData] = useState({
     cetagory: "",
+    offerCetagory: "Others",
     title: "",
     description: "",
     discount: 0,
@@ -132,6 +134,7 @@ export default function OffersPage() {
     setEditingOffer(null);
     setFormData({
       cetagory: "",
+      offerCetagory: "Others",
       title: "",
       description: "",
       discount: 0,
@@ -151,6 +154,7 @@ export default function OffersPage() {
     setEditingOffer(offer);
     setFormData({
       cetagory: offer.cetagory?._id || "",
+      offerCetagory: offer.offerCetagory || "Others",
       title: offer.title,
       description: offer.description,
       discount: offer.discount,
@@ -185,14 +189,19 @@ export default function OffersPage() {
 
     const submitData = new FormData();
     if (formData.cetagory) submitData.append("cetagory", formData.cetagory);
+    if (formData.offerCetagory) submitData.append("offerCetagory", formData.offerCetagory);
     submitData.append("title", formData.title);
     submitData.append("description", formData.description);
     submitData.append("discount", formData.discount.toString());
     if (formData.promocode) submitData.append("promocode", formData.promocode);
     if (formData.serviceLink)
       submitData.append("serviceLink", formData.serviceLink);
-    submitData.append("startTime", new Date(formData.startTime).toISOString());
-    submitData.append("endTime", new Date(formData.endTime).toISOString());
+    if (formData.startTime) {
+      submitData.append("startTime", new Date(formData.startTime).toISOString());
+    }
+    if (formData.endTime) {
+      submitData.append("endTime", new Date(formData.endTime).toISOString());
+    }
     submitData.append("status", formData.status);
 
     if (formData.imageFile) {
@@ -291,6 +300,7 @@ export default function OffersPage() {
                   <TableHead className="font-bold py-5 pl-8">#</TableHead>
                   <TableHead className="font-bold py-5">Image</TableHead>
                   <TableHead className="font-bold py-5">Title</TableHead>
+                  <TableHead className="font-bold py-5">Type</TableHead>
                   <TableHead className="font-bold py-5">Discount</TableHead>
                   <TableHead className="font-bold py-5">Validity</TableHead>
                   <TableHead className="font-bold py-5">Status</TableHead>
@@ -328,19 +338,31 @@ export default function OffersPage() {
                       {offer.title}
                     </TableCell>
                     <TableCell>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs border border-blue-100">
+                        {offer.offerCetagory || "Others"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <span className="px-3 py-1 rounded-full bg-green-50 text-[#2E6F65] font-bold text-xs border border-green-100">
                         {offer.discount}% OFF
                       </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />{" "}
-                          {new Date(offer.startTime).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1 font-bold text-gray-400">
-                          to {new Date(offer.endTime).toLocaleDateString()}
-                        </span>
+                        {offer.startTime && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />{" "}
+                            {new Date(offer.startTime).toLocaleDateString()}
+                          </span>
+                        )}
+                        {offer.endTime && (
+                          <span className="flex items-center gap-1 font-bold text-gray-400">
+                            to {new Date(offer.endTime).toLocaleDateString()}
+                          </span>
+                        )}
+                        {!offer.startTime && !offer.endTime && (
+                          <span className="text-gray-400 italic">No Validity Set</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -416,6 +438,20 @@ export default function OffersPage() {
                   </select>
                 </div>
                 <div className="space-y-2 col-span-2 md:col-span-1">
+                  <Label>Offer Type</Label>
+                  <select
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6F65]"
+                    value={formData.offerCetagory}
+                    onChange={(e) =>
+                      setFormData({ ...formData, offerCetagory: e.target.value })
+                    }
+                  >
+                    <option value="Hotel">Hotel</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2 md:col-span-1">
                   <Label>Offer Title</Label>
                   <Input
                     placeholder="e.g. Summer Special"
@@ -481,7 +517,7 @@ export default function OffersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, startTime: e.target.value })
                     }
-                    required
+              
                   />
                 </div>
                 <div className="space-y-2">
@@ -492,7 +528,7 @@ export default function OffersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, endTime: e.target.value })
                     }
-                    required
+              
                   />
                 </div>
                 <div className="space-y-2">

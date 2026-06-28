@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: 'http',
+        hostname: 'localhost',
+        pathname: '/**',
+      },
+      {
         protocol: 'https',
         hostname: 'malik-backend-orht.onrender.com',
         pathname: '/**',

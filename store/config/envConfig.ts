@@ -1,12 +1,10 @@
-
 // export const imgUrl = "https://ecommarce-backend-dsoe.onrender.com/";
 // export const imgUrl = `${process.env.NEXT_PUBLIC_IMG_URL}`;
 // export const imgUrl = "https://renee-gdy9.onrender.com/";
-export const imgUrl = process.env.NEXT_PUBLIC_IMG_URL || "https://malik-backend-orht.onrender.com/";
-
+export const imgUrl =
+  process.env.NEXT_PUBLIC_IMG_URL || "http://localhost:4000/";
 
 export const url = `${imgUrl}api/v1/`;
-
 
 // export const firebaseConfig = {
 //   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,11 +15,7 @@ export const url = `${imgUrl}api/v1/`;
 //   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 // };
 
-
-
-
 //console.log(url);
-
 
 // Email: parvesmosarof32@gmail.com
 // Password: 12345678
@@ -47,10 +41,10 @@ export const getImageBaseUrl = () => imgUrl;
 // Function to get the WebSocket base URL
 // export const getWsBaseUrl = () => wsUrl;
 
-// asdf 
+// asdf
 
 export const getImageUrl = (imagePath: any) => {
-  if (!imagePath || typeof imagePath !== 'string') return "";
+  if (!imagePath || typeof imagePath !== "string") return "";
 
   // If it's already a full URL, return as-is
   if (imagePath.startsWith("http")) {
